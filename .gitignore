@@ -44,3 +44,9 @@ next-env.d.ts
 
 # Prisma generated client
 /generated
+
+# SQLite dev db
+/prisma/dev.db
+/prisma/dev.db-journal
+/prisma/dev.db-wal
+/prisma/dev.db-shm

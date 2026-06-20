@@ -4,6 +4,7 @@ import { z } from "zod";
 import { authConfig } from "@/auth.config";
 import { prisma } from "@/lib/db";
 import { verifyPassword } from "@/lib/password";
+import type { Role } from "@/lib/roles";
 
 const credentialsSchema = z.object({
   email: z.string().email(),
@@ -26,7 +27,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const ok = await verifyPassword(password, user.passwordHash);
         if (!ok) return null;
 
-        return { id: user.id, name: user.name, email: user.email, role: user.role };
+        return { id: user.id, name: user.name, email: user.email, role: user.role as Role };
       },
     }),
   ],

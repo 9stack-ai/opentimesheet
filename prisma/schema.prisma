@@ -1,5 +1,6 @@
-// 9stimesheet schema — covers ALL features (payout, profitability, billing) up front
-// so later phases never migrate the core model. Money = integer VND dong. Hours = Decimal(5,2).
+// 9stimesheet schema — covers ALL features (payout, profitability, billing) up front.
+// SQLite (via @prisma/adapter-better-sqlite3). Money = integer VND dong; hours = Float.
+// SQLite has no native enums → role/status are String (validated in app via Zod + lib/roles).
 // Docs: https://pris.ly/d/prisma-schema
 
 generator client {
@@ -9,31 +10,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-}
-
-enum Role {
-  ADMIN
-  MANAGER
-  FREELANCER
-}
-
-enum UserStatus {
-  ACTIVE
-  INVITED
-  DISABLED
-}
-
-enum EntryStatus {
-  DRAFT
-  SUBMITTED
-  APPROVED
-  REJECTED
-}
-
-enum ProjectStatus {
-  ACTIVE
-  ARCHIVED
+  provider = "sqlite"
 }
 
 model User {
@@ -41,8 +18,8 @@ model User {
   name                String
   email               String       @unique
   passwordHash        String?
-  role                Role         @default(FREELANCER)
-  status              UserStatus   @default(INVITED)
+  role                String       @default("FREELANCER") // ADMIN | MANAGER | FREELANCER
+  status              String       @default("INVITED") // ACTIVE | INVITED | DISABLED
   defaultCostRate     Int          @default(0) // VND/hour — what we pay
   defaultBillableRate Int          @default(0) // VND/hour — what the client pays
   assignments         Assignment[]
@@ -61,17 +38,17 @@ model Client {
 }
 
 model Project {
-  id          String        @id @default(cuid())
+  id          String       @id @default(cuid())
   clientId    String
-  client      Client        @relation(fields: [clientId], references: [id])
+  client      Client       @relation(fields: [clientId], references: [id])
   name        String
-  status      ProjectStatus @default(ACTIVE)
-  startDate   DateTime?     @db.Date
-  endDate     DateTime?     @db.Date
+  status      String       @default("ACTIVE") // ACTIVE | ARCHIVED
+  startDate   DateTime?
+  endDate     DateTime?
   tasks       Task[]
   assignments Assignment[]
   expenses    Expense[]
-  createdAt   DateTime      @default(now())
+  createdAt   DateTime     @default(now())
 }
 
 model Task {
@@ -96,22 +73,22 @@ model Assignment {
 }
 
 model TimeEntry {
-  id                   String      @id @default(cuid())
+  id                   String    @id @default(cuid())
   userId               String
   taskId               String
-  date                 DateTime    @db.Date
-  hours                Decimal     @db.Decimal(5, 2)
+  date                 DateTime
+  hours                Float
   note                 String?
-  status               EntryStatus @default(DRAFT)
+  status               String    @default("DRAFT") // DRAFT | SUBMITTED | APPROVED | REJECTED
   // Frozen at approval (rate snapshotting). All money reads use these, never live rates.
   costRateSnapshot     Int?
   billableRateSnapshot Int?
   rejectReason         String?
   approvedById         String?
   approvedAt           DateTime?
-  user                 User        @relation(fields: [userId], references: [id])
-  task                 Task        @relation(fields: [taskId], references: [id])
-  createdAt            DateTime    @default(now())
+  user                 User      @relation(fields: [userId], references: [id])
+  task                 Task      @relation(fields: [taskId], references: [id])
+  createdAt            DateTime  @default(now())
 
   @@index([userId, date])
   @@index([status, date])
@@ -122,7 +99,7 @@ model Expense {
   projectId  String? // null = company-level overhead
   category   String
   amount     Int // VND
-  date       DateTime @db.Date
+  date       DateTime
   note       String?
   loggedById String
   project    Project? @relation(fields: [projectId], references: [id])
@@ -134,8 +111,8 @@ model FixedCost {
   name          String
   category      String
   monthlyAmount Int // VND/month
-  effectiveFrom DateTime  @db.Date
-  effectiveTo   DateTime? @db.Date
+  effectiveFrom DateTime
+  effectiveTo   DateTime?
   createdAt     DateTime  @default(now())
 }
 
