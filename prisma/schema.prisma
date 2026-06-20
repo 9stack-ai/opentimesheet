@@ -1,0 +1,151 @@
+// 9stimesheet schema — covers ALL features (payout, profitability, billing) up front
+// so later phases never migrate the core model. Money = integer VND dong. Hours = Decimal(5,2).
+// Docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+  runtime  = "nodejs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  FREELANCER
+}
+
+enum UserStatus {
+  ACTIVE
+  INVITED
+  DISABLED
+}
+
+enum EntryStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
+enum ProjectStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+model User {
+  id                  String       @id @default(cuid())
+  name                String
+  email               String       @unique
+  passwordHash        String?
+  role                Role         @default(FREELANCER)
+  status              UserStatus   @default(INVITED)
+  defaultCostRate     Int          @default(0) // VND/hour — what we pay
+  defaultBillableRate Int          @default(0) // VND/hour — what the client pays
+  assignments         Assignment[]
+  timeEntries         TimeEntry[]
+  inviteToken         InviteToken?
+  createdAt           DateTime     @default(now())
+}
+
+model Client {
+  id        String    @id @default(cuid())
+  name      String
+  contact   String?
+  notes     String?
+  projects  Project[]
+  createdAt DateTime  @default(now())
+}
+
+model Project {
+  id          String        @id @default(cuid())
+  clientId    String
+  client      Client        @relation(fields: [clientId], references: [id])
+  name        String
+  status      ProjectStatus @default(ACTIVE)
+  startDate   DateTime?     @db.Date
+  endDate     DateTime?     @db.Date
+  tasks       Task[]
+  assignments Assignment[]
+  expenses    Expense[]
+  createdAt   DateTime      @default(now())
+}
+
+model Task {
+  id          String      @id @default(cuid())
+  projectId   String
+  project     Project     @relation(fields: [projectId], references: [id])
+  name        String
+  status      String      @default("open")
+  timeEntries TimeEntry[]
+}
+
+model Assignment {
+  id                   String  @id @default(cuid())
+  projectId            String
+  userId               String
+  costRateOverride     Int? // VND/hour, overrides User.defaultCostRate for this project
+  billableRateOverride Int? // VND/hour, overrides User.defaultBillableRate for this project
+  project              Project @relation(fields: [projectId], references: [id])
+  user                 User    @relation(fields: [userId], references: [id])
+
+  @@unique([projectId, userId])
+}
+
+model TimeEntry {
+  id                   String      @id @default(cuid())
+  userId               String
+  taskId               String
+  date                 DateTime    @db.Date
+  hours                Decimal     @db.Decimal(5, 2)
+  note                 String?
+  status               EntryStatus @default(DRAFT)
+  // Frozen at approval (rate snapshotting). All money reads use these, never live rates.
+  costRateSnapshot     Int?
+  billableRateSnapshot Int?
+  rejectReason         String?
+  approvedById         String?
+  approvedAt           DateTime?
+  user                 User        @relation(fields: [userId], references: [id])
+  task                 Task        @relation(fields: [taskId], references: [id])
+  createdAt            DateTime    @default(now())
+
+  @@index([userId, date])
+  @@index([status, date])
+}
+
+model Expense {
+  id         String   @id @default(cuid())
+  projectId  String? // null = company-level overhead
+  category   String
+  amount     Int // VND
+  date       DateTime @db.Date
+  note       String?
+  loggedById String
+  project    Project? @relation(fields: [projectId], references: [id])
+  createdAt  DateTime @default(now())
+}
+
+model FixedCost {
+  id            String    @id @default(cuid())
+  name          String
+  category      String
+  monthlyAmount Int // VND/month
+  effectiveFrom DateTime  @db.Date
+  effectiveTo   DateTime? @db.Date
+  createdAt     DateTime  @default(now())
+}
+
+model InviteToken {
+  id        String    @id @default(cuid())
+  userId    String    @unique
+  selector  String    @unique // queryable lookup key (link = selector.verifier)
+  tokenHash String // bcrypt hash of the verifier half
+  expiresAt DateTime
+  usedAt    DateTime?
+  user      User      @relation(fields: [userId], references: [id])
+  createdAt DateTime  @default(now())
+}
