@@ -12,15 +12,12 @@ import {
 import { nowSaigon } from "@/lib/clock";
 import { formatVnd } from "@/lib/money";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { EntryStatusBadge } from "@/components/status-badge";
-import { createEntry, updateEntry, deleteEntry, submitPeriod } from "./actions";
+import { Card, CardContent } from "@/components/ui/card";
+import { submitPeriod } from "./actions";
+import { EntriesTable } from "./entries-table";
+import type { EntryRow } from "./entries-table";
 
 export const dynamic = "force-dynamic";
-
-const selectClass =
-  "h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none";
 
 export default async function TimesheetPage({
   searchParams,
@@ -70,6 +67,23 @@ export default async function TimesheetPage({
   );
   const hasDraft = entries.some((e) => e.status === "DRAFT" || e.status === "REJECTED");
 
+  // Serialise tasks to plain objects for client components.
+  const taskOptions = tasks.map((t) => ({
+    id: t.id,
+    label: `${t.project.client.name} / ${t.project.name} / ${t.name}`,
+  }));
+
+  const rows: EntryRow[] = entries.map((e) => ({
+    id: e.id,
+    date: formatISODate(e.date),
+    taskId: e.taskId,
+    taskLabel: `${e.task.project.name} / ${e.task.name}`,
+    hours: e.hours.toString(),
+    status: e.status,
+    note: e.note,
+    rejectReason: e.rejectReason,
+  }));
+
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
       <div className="flex flex-wrap items-center gap-3">
@@ -100,77 +114,8 @@ export default async function TimesheetPage({
           </CardContent>
         </Card>
       ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Ghi giờ làm</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form action={createEntry} className="flex flex-wrap items-end gap-2">
-              <select name="taskId" required className={selectClass} aria-label="Công việc">
-                {tasks.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.project.client.name} / {t.project.name} / {t.name}
-                  </option>
-                ))}
-              </select>
-              <Input name="date" type="date" defaultValue={todayStr} required className="w-auto" />
-              <Input name="hours" type="number" step="0.25" min="0.25" max="24" placeholder="Số giờ" required className="w-24" />
-              <Input name="note" placeholder="Ghi chú (tuỳ chọn)" className="w-48" />
-              <Button type="submit">Ghi công</Button>
-            </form>
-          </CardContent>
-        </Card>
+        <EntriesTable data={rows} tasks={taskOptions} today={todayStr} />
       )}
-
-      <div className="flex flex-col gap-2">
-        {entries.map((e) => (
-          <Card key={e.id}>
-            <CardContent className="py-3 text-sm">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span>
-                  <span className="font-medium">{formatISODate(e.date)}</span> · {e.task.project.name} /{" "}
-                  {e.task.name} · {e.hours.toString()} giờ
-                </span>
-                <EntryStatusBadge status={e.status} />
-              </div>
-              {e.note ? <p className="mt-1 text-muted-foreground">{e.note}</p> : null}
-              {e.status === "REJECTED" && e.rejectReason ? (
-                <p className="mt-1 text-sm text-destructive">Lý do từ chối: {e.rejectReason}</p>
-              ) : null}
-
-              {e.status === "DRAFT" || e.status === "REJECTED" ? (
-                <div className="mt-2 flex flex-wrap items-end gap-2">
-                  <form action={updateEntry} className="flex flex-wrap items-end gap-2">
-                    <input type="hidden" name="id" value={e.id} />
-                    <select name="taskId" defaultValue={e.taskId} className={selectClass} aria-label="Công việc">
-                      {tasks.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.project.name} / {t.name}
-                        </option>
-                      ))}
-                    </select>
-                    <Input name="date" type="date" defaultValue={formatISODate(e.date)} className="w-auto" />
-                    <Input name="hours" type="number" step="0.25" min="0.25" max="24" defaultValue={e.hours.toString()} className="w-20" />
-                    <Input name="note" defaultValue={e.note ?? ""} className="w-40" />
-                    <Button type="submit" variant="outline" size="sm">
-                      Lưu
-                    </Button>
-                  </form>
-                  <form action={deleteEntry}>
-                    <input type="hidden" name="id" value={e.id} />
-                    <Button type="submit" variant="ghost" size="sm" className="text-destructive">
-                      Xoá
-                    </Button>
-                  </form>
-                </div>
-              ) : null}
-            </CardContent>
-          </Card>
-        ))}
-        {entries.length === 0 ? (
-          <p className="text-muted-foreground">Chưa có dòng công nào trong kỳ này.</p>
-        ) : null}
-      </div>
 
       {hasDraft ? (
         <form action={submitPeriod} className="flex items-center gap-3">

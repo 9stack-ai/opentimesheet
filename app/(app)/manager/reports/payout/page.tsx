@@ -12,16 +12,7 @@ import {
 } from "@/lib/period";
 import { nowSaigon } from "@/lib/clock";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { PayoutTable } from "./payout-table";
 
 export const dynamic = "force-dynamic";
 
@@ -62,48 +53,14 @@ export default async function PayoutReportPage({
         </Button>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Chi tiết chi trả</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Cộng tác viên</TableHead>
-                <TableHead>Số giờ</TableHead>
-                <TableHead>Chi trả (VND)</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={3} className="text-muted-foreground">
-                    Không có giờ công đã duyệt trong kỳ này.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                rows.map((r) => (
-                  <TableRow key={r.userId}>
-                    <TableCell>{r.userName}</TableCell>
-                    <TableCell>{r.totalHours}</TableCell>
-                    <TableCell>{formatVnd(r.payout)}</TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-            {rows.length > 0 ? (
-              <TableFooter>
-                <TableRow>
-                  <TableCell className="font-medium">Tổng cộng</TableCell>
-                  <TableCell />
-                  <TableCell className="font-medium">{formatVnd(grandTotal)}</TableCell>
-                </TableRow>
-              </TableFooter>
-            ) : null}
-          </Table>
-        </CardContent>
-      </Card>
+      <PayoutTable data={rows} />
+
+      {rows.length > 0 ? (
+        <div className="flex items-center justify-between border-t pt-3 font-medium">
+          <span>Tổng cộng</span>
+          <span>{formatVnd(grandTotal)}</span>
+        </div>
+      ) : null}
     </div>
   );
 }

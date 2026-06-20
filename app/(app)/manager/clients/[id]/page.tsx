@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { updateClient, deleteClient } from "../actions";
-import { createProject } from "../../projects/actions";
+import { deleteClient } from "../actions";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProjectStatusBadge } from "@/components/status-badge";
+import { EditClientDialog } from "./edit-client-dialog";
+import { AddProjectDialog } from "./add-project-dialog";
 
 export const dynamic = "force-dynamic";
 
@@ -27,51 +27,25 @@ export default async function ClientDetailPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <Link href="/manager/clients" className="text-sm text-muted-foreground hover:text-primary">
-          ← Khách hàng
-        </Link>
-        <h1 className="mt-1 text-2xl font-semibold">{client.name}</h1>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <Link href="/manager/clients" className="text-sm text-muted-foreground hover:text-primary">
+            ← Khách hàng
+          </Link>
+          <h1 className="mt-1 text-2xl font-semibold">{client.name}</h1>
+          {client.contact ? (
+            <p className="text-sm text-muted-foreground">{client.contact}</p>
+          ) : null}
+        </div>
+        <EditClientDialog client={client} />
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Thông tin khách hàng</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-base">Dự án</CardTitle>
+          <AddProjectDialog clientId={client.id} />
         </CardHeader>
         <CardContent>
-          <form action={updateClient} className="flex flex-wrap items-end gap-2">
-            <input type="hidden" name="id" value={client.id} />
-            <Input name="name" defaultValue={client.name} placeholder="Tên" className="w-48" />
-            <Input
-              name="contact"
-              defaultValue={client.contact ?? ""}
-              placeholder="Liên hệ"
-              className="w-40"
-            />
-            <Input
-              name="notes"
-              defaultValue={client.notes ?? ""}
-              placeholder="Ghi chú"
-              className="w-48"
-            />
-            <Button type="submit" variant="outline">
-              Lưu
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Dự án</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <form action={createProject} className="flex items-end gap-2">
-            <input type="hidden" name="clientId" value={client.id} />
-            <Input name="name" placeholder="Tên dự án mới" required className="w-56" />
-            <Button type="submit">Thêm dự án</Button>
-          </form>
-
           {client.projects.length === 0 ? (
             <p className="text-sm text-muted-foreground">Chưa có dự án nào.</p>
           ) : (

@@ -2,23 +2,15 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { formatVnd } from "@/lib/money";
-import {
-  renameProject,
-  setProjectStatus,
-  createTask,
-  deleteTask,
-  addAssignment,
-  removeAssignment,
-} from "../actions";
+import { renameProject, setProjectStatus, deleteTask, removeAssignment } from "../actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProjectStatusBadge } from "@/components/status-badge";
+import { AddTaskDialog } from "./add-task-dialog";
+import { AddAssignmentDialog } from "./add-assignment-dialog";
 
 export const dynamic = "force-dynamic";
-
-const selectClass =
-  "h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none";
 
 export default async function ProjectDetailPage({
   params,
@@ -85,16 +77,11 @@ export default async function ProjectDetailPage({
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-base">Hạng mục</CardTitle>
+          <AddTaskDialog projectId={project.id} />
         </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <form action={createTask} className="flex items-end gap-2">
-            <input type="hidden" name="projectId" value={project.id} />
-            <Input name="name" placeholder="Tên hạng mục mới" required className="w-56" />
-            <Button type="submit">Thêm</Button>
-          </form>
-
+        <CardContent>
           {project.tasks.length === 0 ? (
             <p className="text-sm text-muted-foreground">Chưa có hạng mục nào.</p>
           ) : (
@@ -121,10 +108,14 @@ export default async function ProjectDetailPage({
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-base">Nhóm &amp; đơn giá</CardTitle>
+          <AddAssignmentDialog
+            projectId={project.id}
+            availableFreelancers={availableFreelancers.map((f) => ({ id: f.id, name: f.name }))}
+          />
         </CardHeader>
-        <CardContent className="flex flex-col gap-4">
+        <CardContent>
           {project.assignments.length === 0 ? (
             <p className="text-sm text-muted-foreground">Chưa có thành viên nào.</p>
           ) : (
@@ -147,34 +138,6 @@ export default async function ProjectDetailPage({
               ))}
             </ul>
           )}
-
-          {availableFreelancers.length > 0 ? (
-            <form action={addAssignment} className="flex flex-wrap items-end gap-2 border-t pt-4">
-              <input type="hidden" name="projectId" value={project.id} />
-              <select name="userId" required className={selectClass}>
-                {availableFreelancers.map((f) => (
-                  <option key={f.id} value={f.id}>
-                    {f.name}
-                  </option>
-                ))}
-              </select>
-              <Input
-                name="costRateOverride"
-                type="number"
-                min={0}
-                placeholder="Đơn giá vốn (tuỳ chọn)"
-                className="w-44"
-              />
-              <Input
-                name="billableRateOverride"
-                type="number"
-                min={0}
-                placeholder="Đơn giá bán (tuỳ chọn)"
-                className="w-44"
-              />
-              <Button type="submit">Thêm thành viên</Button>
-            </form>
-          ) : null}
         </CardContent>
       </Card>
     </div>
