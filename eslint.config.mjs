@@ -14,6 +14,9 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Prisma-generated client (not hand-written; do not lint).
     "generated/**",
+    // shadcn/ui generated components & hooks (vendored).
+    "components/ui/**",
+    "hooks/**",
   ]),
 ]);
 

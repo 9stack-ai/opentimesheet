@@ -2,32 +2,34 @@
 
 import { useActionState } from "react";
 import { setPassword } from "../actions";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export function SetPasswordForm({ linkToken }: { linkToken: string }) {
   const [state, formAction, pending] = useActionState(setPassword, undefined);
 
   return (
-    <form action={formAction} className="flex flex-col gap-3">
+    <form action={formAction} className="flex flex-col gap-4">
       <input type="hidden" name="linkToken" value={linkToken} />
-      <label className="flex flex-col gap-1 text-sm">
-        New password (min 8 characters)
-        <input
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="password">Mật khẩu mới (tối thiểu 8 ký tự)</Label>
+        <Input
+          id="password"
           name="password"
           type="password"
           minLength={8}
           required
           autoComplete="new-password"
-          className="rounded border border-gray-300 px-3 py-2"
+          placeholder="Nhập mật khẩu mới"
         />
-      </label>
-      {state && !state.ok ? <p className="text-sm text-red-600">{state.message}</p> : null}
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded bg-black px-3 py-2 text-white disabled:opacity-50"
-      >
-        {pending ? "Saving…" : "Set password"}
-      </button>
+      </div>
+      {state && !state.ok ? (
+        <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{state.message}</p>
+      ) : null}
+      <Button type="submit" disabled={pending} className="w-full">
+        {pending ? "Đang lưu…" : "Đặt mật khẩu"}
+      </Button>
     </form>
   );
 }

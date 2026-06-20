@@ -13,18 +13,18 @@ export async function setPassword(
   formData: FormData,
 ): Promise<SetPasswordResult | undefined> {
   const parsed = setPasswordSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { ok: false, message: "Password must be at least 8 characters." };
+  if (!parsed.success) return { ok: false, message: "Mật khẩu phải có ít nhất 8 ký tự." };
 
   const link = parseLinkToken(parsed.data.linkToken);
-  if (!link) return { ok: false, message: "Invalid invite link." };
+  if (!link) return { ok: false, message: "Liên kết mời không hợp lệ." };
 
   const invite = await prisma.inviteToken.findUnique({ where: { selector: link.selector } });
   if (!invite || invite.usedAt || invite.expiresAt < new Date()) {
-    return { ok: false, message: "This invite link is invalid or has expired." };
+    return { ok: false, message: "Liên kết mời không hợp lệ hoặc đã hết hạn." };
   }
 
   const valid = await verifyVerifier(link.verifier, invite.tokenHash);
-  if (!valid) return { ok: false, message: "Invalid invite link." };
+  if (!valid) return { ok: false, message: "Liên kết mời không hợp lệ." };
 
   const passwordHash = await hashPassword(parsed.data.password);
   await prisma.$transaction([

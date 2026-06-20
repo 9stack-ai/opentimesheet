@@ -10,29 +10,34 @@ async function login(page: Page, email: string) {
   await page.waitForURL("/");
 }
 
-// Exercises the full value chain on seeded data (freelancer.a assigned to "Acme Website",
-// cost rate 150k, billable 300k). NOTE: not idempotent — logging adds hours each run, so
-// run it against a freshly migrated + seeded database.
-test("money flow: log → submit → approve → payout", async ({ page }) => {
+async function signOut(page: Page, userName: string) {
+  // User menu lives in the sidebar footer (NavUser dropdown).
+  await page.getByRole("button", { name: new RegExp(userName) }).click();
+  await page.getByText("Đăng xuất").click();
+  await page.waitForURL("/login");
+}
+
+// Exercises the value chain on seeded data (freelancer.a assigned to "Acme Website",
+// cost 150k, billable 300k). NOT idempotent — run against a freshly migrated + seeded DB.
+test("luồng tiền: ghi công → gửi duyệt → duyệt → chi trả", async ({ page }) => {
   // Freelancer logs 2h and submits the period.
   await login(page, "freelancer.a@9stack.local");
   await page.goto("/timesheet");
-  await page.getByPlaceholder("Hours").fill("2");
-  await page.getByRole("button", { name: "Log time" }).click();
-  await expect(page.getByText("DRAFT").first()).toBeVisible();
-  await page.getByRole("button", { name: /Submit .* for approval/ }).click();
-  await page.getByRole("button", { name: "Sign out" }).click();
-  await page.waitForURL("/login");
+  await page.getByPlaceholder("Số giờ").fill("2");
+  await page.getByRole("button", { name: "Ghi công" }).click();
+  await expect(page.getByText("Nháp").first()).toBeVisible();
+  await page.getByRole("button", { name: /Gửi duyệt/ }).click();
+  await signOut(page, "Freelancer A");
 
-  // Manager approves the submitted entry (snapshots the rates).
+  // Manager approves (snapshots the rates).
   await login(page, "manager@9stack.local");
   await page.goto("/manager/approvals");
-  await expect(page.getByRole("heading", { name: "Freelancer A" })).toBeVisible();
-  await page.getByRole("button", { name: "Approve selected" }).click();
+  await expect(page.getByText("Freelancer A").first()).toBeVisible();
+  await page.getByRole("button", { name: "Duyệt mục đã chọn" }).click();
 
   // Payout report reflects the approved time (cost-rate based).
   await page.goto("/manager/reports/payout");
   const row = page.getByRole("row", { name: /Freelancer A/ });
   await expect(row).toBeVisible();
-  await expect(row).toContainText("₫"); // has a VND payout figure
+  await expect(row).toContainText("₫");
 });

@@ -16,8 +16,8 @@ export async function authenticate(
   } catch (error) {
     if (error instanceof AuthError) {
       return error.type === "CredentialsSignin"
-        ? "Invalid email or password."
-        : "Sign-in failed. Please try again.";
+        ? "Email hoặc mật khẩu không đúng."
+        : "Đăng nhập thất bại. Vui lòng thử lại.";
     }
     throw error; // re-throw redirect/control-flow errors
   }
