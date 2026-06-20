@@ -3,9 +3,64 @@ import { Building2, CheckSquare, Clock, TrendingUp, Users, Wallet } from "lucide
 import { requireUser } from "@/lib/rbac";
 import { atLeastManager } from "@/lib/roles";
 import { roleLabel } from "@/lib/labels";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatVnd } from "@/lib/money";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { FinanceBarChart } from "@/components/charts/finance-bar-chart";
+import { HoursBarChart } from "@/components/charts/hours-bar-chart";
+import { managerKpis, managerMonthlyFinance, freelancerMonthlyHours } from "@/lib/dashboard";
 
 export const dynamic = "force-dynamic";
+
+function Kpi({ label, value }: { label: string; value: string }) {
+  return (
+    <Card>
+      <CardHeader className="pb-1">
+        <CardDescription>{label}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-semibold">{value}</div>
+      </CardContent>
+    </Card>
+  );
+}
+
+async function ManagerCharts() {
+  const [kpis, finance] = await Promise.all([managerKpis(), managerMonthlyFinance()]);
+  return (
+    <>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Kpi label="Doanh thu tháng này" value={formatVnd(kpis.revenue)} />
+        <Kpi label="Chi trả CTV tháng này" value={formatVnd(kpis.payout)} />
+        <Kpi label="Lợi nhuận tháng này" value={formatVnd(kpis.net)} />
+        <Kpi label="Dự án đang chạy" value={String(kpis.activeProjects)} />
+      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Doanh thu · Chi phí · Lợi nhuận (6 tháng)</CardTitle>
+          <CardDescription>Theo tháng, dựa trên giờ công đã duyệt + chi phí.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <FinanceBarChart data={finance} />
+        </CardContent>
+      </Card>
+    </>
+  );
+}
+
+async function FreelancerCharts({ userId }: { userId: string }) {
+  const hours = await freelancerMonthlyHours(userId);
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Giờ công đã duyệt (6 tháng)</CardTitle>
+        <CardDescription>Tổng giờ công đã được duyệt theo từng tháng.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <HoursBarChart data={hours} />
+      </CardContent>
+    </Card>
+  );
+}
 
 export default async function Home() {
   const user = await requireUser();
@@ -28,25 +83,30 @@ export default async function Home() {
         <p className="text-muted-foreground">Bạn đang đăng nhập với vai trò {roleLabel(user.role)}.</p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {cards.map((c) => {
-          const Icon = c.icon;
-          return (
-            <Link key={c.href} href={c.href} className="block">
-              <Card className="h-full transition-colors hover:border-primary/50 hover:bg-accent/40">
-                <CardHeader>
-                  <div className="mb-1 flex items-center gap-3">
-                    <div className="flex size-10 items-center justify-center rounded-md bg-primary/10 text-primary">
-                      <Icon className="size-5" />
+      {isManager ? <ManagerCharts /> : <FreelancerCharts userId={user.id} />}
+
+      <div>
+        <h2 className="mb-3 text-sm font-medium text-muted-foreground">Lối tắt</h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {cards.map((c) => {
+            const Icon = c.icon;
+            return (
+              <Link key={c.href} href={c.href} className="block">
+                <Card className="h-full transition-colors hover:border-primary/50 hover:bg-accent/40">
+                  <CardHeader>
+                    <div className="mb-1 flex items-center gap-3">
+                      <div className="flex size-10 items-center justify-center rounded-md bg-primary/10 text-primary">
+                        <Icon className="size-5" />
+                      </div>
+                      <CardTitle className="text-base">{c.title}</CardTitle>
                     </div>
-                    <CardTitle className="text-base">{c.title}</CardTitle>
-                  </div>
-                  <CardDescription>{c.desc}</CardDescription>
-                </CardHeader>
-              </Card>
-            </Link>
-          );
-        })}
+                    <CardDescription>{c.desc}</CardDescription>
+                  </CardHeader>
+                </Card>
+              </Link>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
