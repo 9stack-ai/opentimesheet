@@ -33,7 +33,16 @@ export default async function PayoutReportPage({
   else period = monthPeriod(cy, cm);
 
   const rows = payoutByUser(await approvedEntriesForPeriod(period));
-  const grandTotal = rows.reduce((s, r) => s + r.payout, 0);
+  const totals = rows.reduce(
+    (s, r) => ({
+      gross: s.gross + r.gross,
+      taxWithheld: s.taxWithheld + r.taxWithheld,
+      net: s.net + r.net,
+      employerCost: s.employerCost + r.employerCost,
+      totalCompanyCost: s.totalCompanyCost + r.totalCompanyCost,
+    }),
+    { gross: 0, taxWithheld: 0, net: 0, employerCost: 0, totalCompanyCost: 0 },
+  );
   const exportQuery = period.kind === "week" ? `week=${period.label}` : `month=${period.label}`;
 
   return (
@@ -56,9 +65,27 @@ export default async function PayoutReportPage({
       <PayoutTable data={rows} />
 
       {rows.length > 0 ? (
-        <div className="flex items-center justify-between border-t pt-3 font-medium">
-          <span>Tổng cộng</span>
-          <span>{formatVnd(grandTotal)}</span>
+        <div className="flex flex-col gap-1 border-t pt-3 text-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">Tổng gộp (trước thuế)</span>
+            <span>{formatVnd(totals.gross)}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">Tổng thuế giữ lại (nộp hộ)</span>
+            <span>{formatVnd(totals.taxWithheld)}</span>
+          </div>
+          <div className="flex items-center justify-between font-medium">
+            <span>Tổng thực nhận (chuyển cho người)</span>
+            <span>{formatVnd(totals.net)}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">Tổng BH công ty đóng</span>
+            <span>{formatVnd(totals.employerCost)}</span>
+          </div>
+          <div className="flex items-center justify-between border-t pt-1 font-semibold">
+            <span>Tổng chi phí công ty</span>
+            <span>{formatVnd(totals.totalCompanyCost)}</span>
+          </div>
         </div>
       ) : null}
     </div>

@@ -25,8 +25,24 @@ export async function GET(req: NextRequest) {
 
   const rows = payoutByUser(await approvedEntriesForPeriod(period));
   const csv = toCsv(
-    ["Freelancer", "Hours", "Payout (VND)"],
-    rows.map((r) => [r.userName, r.totalHours, r.payout]),
+    [
+      "Freelancer",
+      "Hours",
+      "Gross (VND)",
+      "Tax withheld (VND)",
+      "Net (VND)",
+      "Employer cost (VND)",
+      "Total company cost (VND)",
+    ],
+    rows.map((r) => [
+      r.userName,
+      r.totalHours,
+      r.gross,
+      r.taxWithheld,
+      r.net,
+      r.employerCost,
+      r.totalCompanyCost,
+    ]),
   );
 
   return new Response(csv, {

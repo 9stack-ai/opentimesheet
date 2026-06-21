@@ -22,6 +22,8 @@ model User {
   status              String       @default("INVITED") // ACTIVE | INVITED | DISABLED
   defaultCostRate     Int          @default(0)
   defaultBillableRate Int          @default(0)
+  taxWithholdingRateBps Int        @default(0)
+  employerCostRateBps   Int        @default(0)
   redmineApiKeyEnc    String?
   redmineUserId       Int?
   redmineConnectedAt  DateTime?
@@ -93,6 +95,8 @@ model TimeEntry {
   status               String    @default("DRAFT") // DRAFT | SUBMITTED | APPROVED | REJECTED
   costRateSnapshot     Int?
   billableRateSnapshot Int?
+  taxRateSnapshot      Int?
+  employerCostRateSnapshot Int?
   rejectReason         String?
   approvedById         String?
   approvedAt           DateTime?

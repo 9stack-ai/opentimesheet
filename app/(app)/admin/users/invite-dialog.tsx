@@ -72,6 +72,16 @@ export function InviteDialog() {
               <Input name="defaultBillableRate" type="number" min={0} placeholder="VND/giờ" />
             </div>
           </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="grid gap-2">
+              <Label>% thuế giữ lại (TNCN)</Label>
+              <Input name="taxWithholdingPercent" type="number" min={0} max={100} step="0.01" placeholder="vd 10 (CTV)" />
+            </div>
+            <div className="grid gap-2">
+              <Label>% BH công ty</Label>
+              <Input name="employerCostPercent" type="number" min={0} max={100} step="0.01" placeholder="vd 21.5 (NV)" />
+            </div>
+          </div>
           <Button type="submit" disabled={pending}>
             {pending ? "Đang mời…" : "Gửi lời mời"}
           </Button>

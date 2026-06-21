@@ -17,6 +17,9 @@ export async function approvedEntriesForPeriod(period: Period): Promise<Approved
     hours: Number(e.hours),
     costRateSnapshot: e.costRateSnapshot ?? 0,
     billableRateSnapshot: e.billableRateSnapshot ?? 0,
+    // Legacy rows (approved before the tax model) have null → 0% (net = gross, no employer cost).
+    taxRateSnapshot: e.taxRateSnapshot ?? 0,
+    employerCostRateSnapshot: e.employerCostRateSnapshot ?? 0,
     projectId: e.task.projectId,
     projectName: e.task.project.name,
     clientId: e.task.project.clientId,

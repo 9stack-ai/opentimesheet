@@ -34,7 +34,8 @@ export default async function FinanceOverviewPage({
 
   const f = await financeOverview(period);
   const breakdown = [
-    { key: "payout", label: "Chi trả nhân sự", value: f.payout },
+    { key: "payout", label: "Chi trả nhân sự (gộp)", value: f.payout },
+    { key: "employerInsurance", label: "BH công ty đóng", value: f.employerInsurance },
     { key: "regular", label: "Chi phí thường", value: f.regularExpense },
     { key: "irregular", label: "Chi bất thường", value: f.irregularExpense },
     { key: "fixed", label: "Chi phí cố định", value: f.fixedCost },

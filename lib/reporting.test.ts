@@ -15,6 +15,8 @@ function entry(p: Partial<ApprovedEntry>): ApprovedEntry {
     hours: 1,
     costRateSnapshot: 100000,
     billableRateSnapshot: 200000,
+    taxRateSnapshot: 0,
+    employerCostRateSnapshot: 0,
     projectId: "p1",
     projectName: "P",
     clientId: "c1",
@@ -24,16 +26,31 @@ function entry(p: Partial<ApprovedEntry>): ApprovedEntry {
 }
 
 describe("payoutByUser", () => {
-  it("sums hours*costRateSnapshot per user", () => {
+  it("sums gross per user; 0% tax → net == gross, no employer cost", () => {
     const rows = payoutByUser([
       entry({ userId: "u1", userName: "Alice", hours: 2, costRateSnapshot: 150000 }),
       entry({ userId: "u1", userName: "Alice", hours: 1.5, costRateSnapshot: 150000 }),
       entry({ userId: "u2", userName: "Bob", hours: 3, costRateSnapshot: 120000 }),
     ]);
     expect(rows).toEqual([
-      { userId: "u1", userName: "Alice", totalHours: 3.5, payout: 525000 },
-      { userId: "u2", userName: "Bob", totalHours: 3, payout: 360000 },
+      { userId: "u1", userName: "Alice", totalHours: 3.5, gross: 525000, taxWithheld: 0, net: 525000, employerCost: 0, totalCompanyCost: 525000 },
+      { userId: "u2", userName: "Bob", totalHours: 3, gross: 360000, taxWithheld: 0, net: 360000, employerCost: 0, totalCompanyCost: 360000 },
     ]);
+  });
+
+  it("splits gross into tax/net (CTV 10%) and adds employer insurance (NV 21.5%)", () => {
+    const rows = payoutByUser([
+      entry({ userId: "u1", userName: "CTV", hours: 2, costRateSnapshot: 110000, taxRateSnapshot: 1000 }),
+      entry({ userId: "u2", userName: "NV", hours: 10, costRateSnapshot: 100000, employerCostRateSnapshot: 2150 }),
+    ]);
+    expect(rows).toEqual([
+      // gross 220k → tax 22k → net 198k (the collaborator example); no employer cost
+      { userId: "u1", userName: "CTV", totalHours: 2, gross: 220000, taxWithheld: 22000, net: 198000, employerCost: 0, totalCompanyCost: 220000 },
+      // gross 1M, no withholding, employer insurance 215k → company cost 1,215,000
+      { userId: "u2", userName: "NV", totalHours: 10, gross: 1000000, taxWithheld: 0, net: 1000000, employerCost: 215000, totalCompanyCost: 1215000 },
+    ]);
+    // net + tax always reconciles to gross
+    for (const r of rows) expect(r.net + r.taxWithheld).toBe(r.gross);
   });
 
   it("returns [] for no entries", () => {

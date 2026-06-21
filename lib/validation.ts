@@ -1,12 +1,17 @@
 import { z } from "zod";
 import { ROLES } from "@/lib/roles";
 
+// Tax rates entered as a human percent (0–100, decimals allowed); converted to basis points on write.
+const taxPercent = z.coerce.number().min(0).max(100).default(0);
+
 export const inviteUserSchema = z.object({
   name: z.string().min(1).max(120),
   email: z.string().email(),
   role: z.enum(ROLES),
   defaultCostRate: z.coerce.number().int().min(0).default(0),
   defaultBillableRate: z.coerce.number().int().min(0).default(0),
+  taxWithholdingPercent: taxPercent,
+  employerCostPercent: taxPercent,
 });
 
 export const updateUserSchema = z.object({
@@ -15,6 +20,8 @@ export const updateUserSchema = z.object({
   role: z.enum(ROLES),
   defaultCostRate: z.coerce.number().int().min(0),
   defaultBillableRate: z.coerce.number().int().min(0),
+  taxWithholdingPercent: taxPercent,
+  employerCostPercent: taxPercent,
 });
 
 // Admin creates a user and sets the password directly (active immediately, no invite link).

@@ -11,6 +11,7 @@ import {
 } from "@/lib/validation";
 import { createInviteToken, hashVerifier } from "@/lib/auth-tokens";
 import { hashPassword } from "@/lib/password";
+import { percentToBps } from "@/lib/payroll";
 
 const INVITE_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 
@@ -39,6 +40,8 @@ export async function createUserWithPassword(
       status: "ACTIVE",
       defaultCostRate: data.defaultCostRate,
       defaultBillableRate: data.defaultBillableRate,
+      taxWithholdingRateBps: percentToBps(data.taxWithholdingPercent),
+      employerCostRateBps: percentToBps(data.employerCostPercent),
       passwordHash,
     },
   });
@@ -97,6 +100,8 @@ export async function inviteUser(_prev: InviteResult | undefined, formData: Form
       status: "INVITED",
       defaultCostRate: data.defaultCostRate,
       defaultBillableRate: data.defaultBillableRate,
+      taxWithholdingRateBps: percentToBps(data.taxWithholdingPercent),
+      employerCostRateBps: percentToBps(data.employerCostPercent),
       inviteToken: {
         create: { selector, tokenHash, expiresAt: new Date(Date.now() + INVITE_TTL_MS) },
       },
@@ -112,8 +117,15 @@ export async function updateUser(formData: FormData): Promise<void> {
   await requireRole(["ADMIN"]);
   const parsed = updateUserSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return;
-  const { id, ...data } = parsed.data;
-  await prisma.user.update({ where: { id }, data });
+  const { id, taxWithholdingPercent, employerCostPercent, ...rest } = parsed.data;
+  await prisma.user.update({
+    where: { id },
+    data: {
+      ...rest,
+      taxWithholdingRateBps: percentToBps(taxWithholdingPercent),
+      employerCostRateBps: percentToBps(employerCostPercent),
+    },
+  });
   revalidatePath("/admin/users");
 }
 

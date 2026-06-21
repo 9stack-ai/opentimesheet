@@ -6,4 +6,6 @@ export type UserRow = {
   status: string;
   defaultCostRate: number;
   defaultBillableRate: number;
+  taxWithholdingRateBps: number;
+  employerCostRateBps: number;
 };

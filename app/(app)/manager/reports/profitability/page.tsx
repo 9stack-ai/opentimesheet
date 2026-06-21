@@ -50,6 +50,10 @@ export default async function ProfitabilityReportPage({
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-2xl font-semibold">Lợi nhuận</h1>
+      <p className="-mt-4 text-xs text-muted-foreground">
+        &quot;Chi phí trực tiếp&quot; gồm lương gộp + BH phần công ty + chi phí gắn dự án (thuế giữ
+        lại của người lao động không tính vào — nằm trong lương gộp).
+      </p>
 
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-sm text-muted-foreground">

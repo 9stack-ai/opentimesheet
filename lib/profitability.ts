@@ -8,7 +8,7 @@ export type ProjectInput = {
   projectName: string;
   approvedHours: number;
   revenue: number; // Σ hours × billableRateSnapshot (rounded)
-  directCost: number; // Σ hours × costRateSnapshot (rounded) + project-tagged expenses
+  directCost: number; // Σ hours × costRateSnapshot (gross) + employer insurance + project-tagged expenses
 };
 
 export type ProfitabilityInput = {

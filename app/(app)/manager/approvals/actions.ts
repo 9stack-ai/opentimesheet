@@ -30,7 +30,12 @@ export async function approveEntries(formData: FormData) {
       const [user, assignment] = await Promise.all([
         tx.user.findUniqueOrThrow({
           where: { id: e.userId },
-          select: { defaultCostRate: true, defaultBillableRate: true },
+          select: {
+            defaultCostRate: true,
+            defaultBillableRate: true,
+            taxWithholdingRateBps: true,
+            employerCostRateBps: true,
+          },
         }),
         tx.assignment.findUnique({
           where: { projectId_userId: { projectId: e.task.projectId, userId: e.userId } },
@@ -44,6 +49,9 @@ export async function approveEntries(formData: FormData) {
           status: "APPROVED",
           costRateSnapshot: rates.costRate,
           billableRateSnapshot: rates.billableRate,
+          // Freeze the owner's tax rates too, so payout/finance stay stable if rates change later.
+          taxRateSnapshot: user.taxWithholdingRateBps,
+          employerCostRateSnapshot: user.employerCostRateBps,
           approvedById: manager.id,
           approvedAt,
         },

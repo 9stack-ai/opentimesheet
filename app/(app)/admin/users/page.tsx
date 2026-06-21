@@ -14,6 +14,8 @@ export default async function UsersPage() {
       status: true,
       defaultCostRate: true,
       defaultBillableRate: true,
+      taxWithholdingRateBps: true,
+      employerCostRateBps: true,
     },
   });
 

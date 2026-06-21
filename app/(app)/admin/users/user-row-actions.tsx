@@ -22,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ROLES } from "@/lib/roles";
 import { roleLabel } from "@/lib/labels";
+import { bpsToPercent } from "@/lib/payroll";
 import { updateUser, setUserStatus, adminSetPassword, type SetPasswordResult } from "./actions";
 import type { UserRow } from "./types";
 
@@ -104,6 +105,30 @@ export function UserRowActions({ user }: { user: UserRow }) {
               <div className="grid gap-2">
                 <Label>Đơn giá bán</Label>
                 <Input name="defaultBillableRate" type="number" min={0} defaultValue={user.defaultBillableRate} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="grid gap-2">
+                <Label>% thuế giữ lại (TNCN)</Label>
+                <Input
+                  name="taxWithholdingPercent"
+                  type="number"
+                  min={0}
+                  max={100}
+                  step="0.01"
+                  defaultValue={bpsToPercent(user.taxWithholdingRateBps)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>% BH công ty</Label>
+                <Input
+                  name="employerCostPercent"
+                  type="number"
+                  min={0}
+                  max={100}
+                  step="0.01"
+                  defaultValue={bpsToPercent(user.employerCostRateBps)}
+                />
               </div>
             </div>
             <DialogFooter>

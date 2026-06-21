@@ -82,11 +82,15 @@ export default async function TimesheetPage({
   });
 
   const totalHours = entries.reduce((sum, e) => sum + Number(e.hours), 0);
-  const approvedPayout = Math.round(
-    entries
-      .filter((e) => e.status === "APPROVED")
-      .reduce((sum, e) => sum + Number(e.hours) * (e.costRateSnapshot ?? 0), 0),
+  // Net actually received by the person = gross − withheld PIT. Round gross and tax separately
+  // (same decomposition as the manager payout report) so both screens show the identical net.
+  const approved = entries.filter((e) => e.status === "APPROVED");
+  const approvedGrossRaw = approved.reduce((s, e) => s + Number(e.hours) * (e.costRateSnapshot ?? 0), 0);
+  const approvedTaxRaw = approved.reduce(
+    (s, e) => s + (Number(e.hours) * (e.costRateSnapshot ?? 0) * (e.taxRateSnapshot ?? 0)) / 10000,
+    0,
   );
+  const approvedPayout = Math.round(approvedGrossRaw) - Math.round(approvedTaxRaw);
   const hasDraft = entries.some((e) => e.status === "DRAFT" || e.status === "REJECTED");
 
   // Serialise tasks to plain objects for client components.
@@ -126,7 +130,7 @@ export default async function TimesheetPage({
           </span>
           {approvedPayout > 0 ? (
             <span>
-              Đã duyệt: <span className="font-semibold">{formatVnd(approvedPayout)}</span>
+              Đã duyệt (thực nhận): <span className="font-semibold">{formatVnd(approvedPayout)}</span>
             </span>
           ) : null}
         </div>

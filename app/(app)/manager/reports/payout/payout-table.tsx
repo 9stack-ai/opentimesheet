@@ -7,7 +7,11 @@ export type PayoutRow = {
   userId: string;
   userName: string;
   totalHours: number;
-  payout: number;
+  gross: number;
+  taxWithheld: number;
+  net: number;
+  employerCost: number;
+  totalCompanyCost: number;
 };
 
 export function PayoutTable({ data }: { data: PayoutRow[] }) {

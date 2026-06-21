@@ -31,13 +31,26 @@ async function isActiveUser(userId: string): Promise<boolean> {
 async function snapshotForApproved(
   ownerId: string,
   taskId: string,
-): Promise<{ costRateSnapshot: number; billableRateSnapshot: number } | undefined> {
+): Promise<
+  | {
+      costRateSnapshot: number;
+      billableRateSnapshot: number;
+      taxRateSnapshot: number;
+      employerCostRateSnapshot: number;
+    }
+  | undefined
+> {
   const task = await prisma.task.findUnique({ where: { id: taskId }, select: { projectId: true } });
   if (!task) return undefined;
   const [owner, assignment] = await Promise.all([
     prisma.user.findUniqueOrThrow({
       where: { id: ownerId },
-      select: { defaultCostRate: true, defaultBillableRate: true },
+      select: {
+        defaultCostRate: true,
+        defaultBillableRate: true,
+        taxWithholdingRateBps: true,
+        employerCostRateBps: true,
+      },
     }),
     prisma.assignment.findUnique({
       where: { projectId_userId: { projectId: task.projectId, userId: ownerId } },
@@ -45,7 +58,12 @@ async function snapshotForApproved(
     }),
   ]);
   const rates = effectiveRates(assignment, owner);
-  return { costRateSnapshot: rates.costRate, billableRateSnapshot: rates.billableRate };
+  return {
+    costRateSnapshot: rates.costRate,
+    billableRateSnapshot: rates.billableRate,
+    taxRateSnapshot: owner.taxWithholdingRateBps,
+    employerCostRateSnapshot: owner.employerCostRateBps,
+  };
 }
 
 export async function createEntry(formData: FormData) {

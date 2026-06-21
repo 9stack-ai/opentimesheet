@@ -14,12 +14,20 @@ export async function profitabilityForPeriod(period: Period): Promise<Profitabil
     period.kind === "month" ? fixedCostsTotalForPeriod(period) : Promise.resolve(0),
   ]);
 
-  const map = new Map<string, { projectName: string; approvedHours: number; revenueRaw: number; laborRaw: number }>();
+  const map = new Map<
+    string,
+    { projectName: string; approvedHours: number; revenueRaw: number; laborRaw: number; employerRaw: number }
+  >();
   for (const e of entries) {
-    const m = map.get(e.projectId) ?? { projectName: e.projectName, approvedHours: 0, revenueRaw: 0, laborRaw: 0 };
+    const m =
+      map.get(e.projectId) ??
+      { projectName: e.projectName, approvedHours: 0, revenueRaw: 0, laborRaw: 0, employerRaw: 0 };
+    const entryGross = e.hours * e.costRateSnapshot;
     m.approvedHours += e.hours;
     m.revenueRaw += e.hours * e.billableRateSnapshot;
-    m.laborRaw += e.hours * e.costRateSnapshot;
+    m.laborRaw += entryGross;
+    // Employer-side insurance is a real additional company cost (withholding is NOT — it's within gross).
+    m.employerRaw += (entryGross * e.employerCostRateSnapshot) / 10000;
     map.set(e.projectId, m);
   }
 
@@ -28,7 +36,8 @@ export async function profitabilityForPeriod(period: Period): Promise<Profitabil
     projectName: m.projectName,
     approvedHours: m.approvedHours,
     revenue: Math.round(m.revenueRaw),
-    directCost: Math.round(m.laborRaw) + (expenses.projectExpenses.get(projectId) ?? 0),
+    directCost:
+      Math.round(m.laborRaw) + Math.round(m.employerRaw) + (expenses.projectExpenses.get(projectId) ?? 0),
   }));
 
   const input: ProfitabilityInput = {

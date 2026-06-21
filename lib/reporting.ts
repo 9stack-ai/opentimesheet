@@ -7,6 +7,9 @@ export type ApprovedEntry = {
   hours: number;
   costRateSnapshot: number;
   billableRateSnapshot: number;
+  // Tax rates frozen at approval (basis points; 0 for legacy/unset).
+  taxRateSnapshot: number;
+  employerCostRateSnapshot: number;
   projectId: string;
   projectName: string;
   clientId: string;
@@ -17,25 +20,56 @@ export type PayoutRow = {
   userId: string;
   userName: string;
   totalHours: number;
-  payout: number;
+  /** Gross labor cost (trước thuế) = Σ hours × costRateSnapshot. */
+  gross: number;
+  /** PIT withheld (thuế giữ lại). */
+  taxWithheld: number;
+  /** Net actually transferred to the person (thực nhận) = gross − taxWithheld. */
+  net: number;
+  /** Employer-side insurance — additional company cost (BH công ty). */
+  employerCost: number;
+  /** Total company outlay for this person = gross + employerCost. */
+  totalCompanyCost: number;
 };
 
-/** Σ(hours × costRateSnapshot) per user, rounded once at the total. */
+/**
+ * Per-user payout broken into gross / tax-withheld / net / employer-cost.
+ * Withholding is computed per entry (rates can differ between approvals) then rounded once at the
+ * total; net = roundedGross − roundedTax so the columns reconcile exactly.
+ */
 export function payoutByUser(entries: ApprovedEntry[]): PayoutRow[] {
-  const map = new Map<string, { userName: string; totalHours: number; payoutRaw: number }>();
+  const map = new Map<
+    string,
+    { userName: string; totalHours: number; grossRaw: number; taxRaw: number; employerRaw: number }
+  >();
   for (const e of entries) {
-    const row = map.get(e.userId) ?? { userName: e.userName, totalHours: 0, payoutRaw: 0 };
+    const row =
+      map.get(e.userId) ??
+      { userName: e.userName, totalHours: 0, grossRaw: 0, taxRaw: 0, employerRaw: 0 };
+    const entryGross = e.hours * e.costRateSnapshot;
     row.totalHours += e.hours;
-    row.payoutRaw += e.hours * e.costRateSnapshot;
+    row.grossRaw += entryGross;
+    // Accumulate raw (unrounded) per-entry amounts; rates differ per entry so keep them inside Σ.
+    row.taxRaw += (entryGross * e.taxRateSnapshot) / 10000;
+    row.employerRaw += (entryGross * e.employerCostRateSnapshot) / 10000;
     map.set(e.userId, row);
   }
   return Array.from(map.entries())
-    .map(([userId, r]) => ({
-      userId,
-      userName: r.userName,
-      totalHours: r.totalHours,
-      payout: Math.round(r.payoutRaw),
-    }))
+    .map(([userId, r]) => {
+      const gross = Math.round(r.grossRaw);
+      const taxWithheld = Math.round(r.taxRaw);
+      const employerCostTotal = Math.round(r.employerRaw);
+      return {
+        userId,
+        userName: r.userName,
+        totalHours: r.totalHours,
+        gross,
+        taxWithheld,
+        net: gross - taxWithheld,
+        employerCost: employerCostTotal,
+        totalCompanyCost: gross + employerCostTotal,
+      };
+    })
     .sort((a, b) => a.userName.localeCompare(b.userName));
 }
 

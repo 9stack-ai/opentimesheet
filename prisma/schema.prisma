@@ -23,6 +23,9 @@ model User {
   status              String       @default("INVITED") // ACTIVE | INVITED | DISABLED
   defaultCostRate     Int          @default(0) // VND/hour — what we pay
   defaultBillableRate Int          @default(0) // VND/hour — what the client pays
+  // Tax model (basis points; 10% = 1000). Withholding is deducted from gross pay; employer cost is added on top.
+  taxWithholdingRateBps Int        @default(0) // PIT withheld from collaborator pay (e.g. 1000 = 10%)
+  employerCostRateBps   Int        @default(0) // employer-side insurance, extra company cost (e.g. 2150 = 21.5%)
   // Redmine integration (single shared instance; API key encrypted at rest)
   redmineApiKeyEnc    String?
   redmineUserId       Int?
@@ -97,6 +100,9 @@ model TimeEntry {
   // Frozen at approval (rate snapshotting). All money reads use these, never live rates.
   costRateSnapshot     Int?
   billableRateSnapshot Int?
+  // Tax rates frozen at approval (basis points). null on legacy rows → treated as 0.
+  taxRateSnapshot      Int?
+  employerCostRateSnapshot Int?
   rejectReason         String?
   approvedById         String?
   approvedAt           DateTime?
