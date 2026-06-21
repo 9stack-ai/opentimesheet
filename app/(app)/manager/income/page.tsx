@@ -21,6 +21,7 @@ export default async function IncomePage() {
     date: i.date ? formatISODate(i.date) : null,
     source: i.source,
     amount: i.amount,
+    note: i.note,
   }));
 
   return (

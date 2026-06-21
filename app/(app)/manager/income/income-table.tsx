@@ -9,6 +9,7 @@ export type IncomeRow = {
   date: string | null;
   source: string;
   amount: number;
+  note: string | null;
 };
 
 export function IncomeTable({ data }: { data: IncomeRow[] }) {

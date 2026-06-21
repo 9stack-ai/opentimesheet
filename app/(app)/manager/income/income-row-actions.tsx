@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,10 +9,22 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { deleteIncome } from "./actions";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { updateIncome, deleteIncome } from "./actions";
 import type { IncomeRow } from "./income-table";
 
 export function IncomeRowActions({ income }: { income: IncomeRow }) {
+  const [editOpen, setEditOpen] = React.useState(false);
+
   return (
     <div className="flex justify-end">
       <DropdownMenu>
@@ -22,6 +35,14 @@ export function IncomeRowActions({ income }: { income: IncomeRow }) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+          <DropdownMenuItem
+            onSelect={(e) => {
+              e.preventDefault();
+              setEditOpen(true);
+            }}
+          >
+            Sửa
+          </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <form action={deleteIncome} className="w-full">
               <input type="hidden" name="id" value={income.id} />
@@ -32,6 +53,48 @@ export function IncomeRowActions({ income }: { income: IncomeRow }) {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Sửa nguồn thu</DialogTitle>
+          </DialogHeader>
+          <form action={updateIncome} onSubmit={() => setEditOpen(false)} className="flex flex-col gap-4">
+            <input type="hidden" name="id" value={income.id} />
+            <div className="grid gap-2">
+              <Label htmlFor={`source-${income.id}`}>Nguồn thu</Label>
+              <Input id={`source-${income.id}`} name="source" defaultValue={income.source} required />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor={`amount-${income.id}`}>Số tiền (VND)</Label>
+              <Input
+                id={`amount-${income.id}`}
+                name="amount"
+                type="number"
+                min={0}
+                defaultValue={income.amount}
+                required
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor={`date-${income.id}`}>Ngày (tuỳ chọn)</Label>
+              <Input id={`date-${income.id}`} name="date" type="date" defaultValue={income.date ?? ""} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor={`note-${income.id}`}>Ghi chú (tuỳ chọn)</Label>
+              <Input id={`note-${income.id}`} name="note" defaultValue={income.note ?? ""} />
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="outline">
+                  Huỷ
+                </Button>
+              </DialogClose>
+              <Button type="submit">Lưu</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
