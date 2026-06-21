@@ -34,18 +34,23 @@ export default async function DisbursementsPage({
   ]);
 
   const today = now.toISOString().slice(0, 10);
-  const totals = rows.reduce(
+  // Tách 2 nhóm: người CÓ chấm công (đối soát phải trả ↔ đã trả) và người chỉ nhận chi
+  // ngoài timesheet (owed = 0). Trộn chung khiến cột "Còn lại" và dòng Tổng vô nghĩa.
+  const withTimesheet = rows.filter((r) => r.owed > 0);
+  const offTimesheet = rows.filter((r) => r.owed === 0 && r.paid > 0);
+  const totals = withTimesheet.reduce(
     (s, r) => ({ owed: s.owed + r.owed, paid: s.paid + r.paid, remaining: s.remaining + r.remaining }),
     { owed: 0, paid: 0, remaining: 0 },
   );
+  const offTotal = offTimesheet.reduce((s, r) => s + r.paid, 0);
 
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-2xl font-semibold">Thực chi</h1>
         <p className="text-sm text-muted-foreground">
-          Tiền thực trả cho CTV/nhân viên, đối soát với lương ghi nhận từ chấm công (đã duyệt) theo
-          kỳ. Cả hai vế lọc theo ngày trong kỳ đang chọn.
+          Tiền thực trả cho CTV/nhân viên. Người có chấm công được đối soát phải-trả ↔ đã-trả; người
+          được trả ngoài chấm công tách riêng. Mọi vế lọc theo ngày trong kỳ đang chọn.
         </p>
       </div>
 
@@ -56,64 +61,110 @@ export default async function DisbursementsPage({
         </div>
       </div>
 
-      {/* Reconciliation: accrued net (phải trả) vs actually paid */}
-      <div className="overflow-x-auto rounded-md border">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/50 text-muted-foreground">
-            <tr>
-              <th className="px-3 py-2 text-left font-medium">Người</th>
-              <th className="px-3 py-2 text-left font-medium">Vai trò</th>
-              <th className="px-3 py-2 text-right font-medium">Phải trả (thực nhận)</th>
-              <th className="px-3 py-2 text-right font-medium">Đã trả</th>
-              <th className="px-3 py-2 text-right font-medium">Còn lại</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.length === 0 ? (
+      {/* 1) Đối soát cho người CÓ chấm công: phải trả (net) vs đã trả */}
+      <div>
+        <h2 className="mb-2 text-sm font-medium text-muted-foreground">
+          Đối soát chấm công (người có timesheet)
+        </h2>
+        <div className="overflow-x-auto rounded-md border">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50 text-muted-foreground">
               <tr>
-                <td colSpan={5} className="px-3 py-6 text-center text-muted-foreground">
-                  Chưa có lương ghi nhận hay khoản chi nào trong kỳ {period.label}.
-                </td>
+                <th className="px-3 py-2 text-left font-medium">Người</th>
+                <th className="px-3 py-2 text-left font-medium">Vai trò</th>
+                <th className="px-3 py-2 text-right font-medium">Phải trả (thực nhận)</th>
+                <th className="px-3 py-2 text-right font-medium">Đã trả</th>
+                <th className="px-3 py-2 text-right font-medium">Còn lại</th>
               </tr>
-            ) : (
-              rows.map((r) => (
-                <tr key={r.userId} className="border-t">
-                  <td className="px-3 py-2 font-medium">
-                    <Link
-                      href={`/manager/reports/payout/${r.userId}?${ep.key}=${ep.value}`}
-                      className="hover:underline"
-                    >
-                      {r.userName}
-                    </Link>
-                  </td>
-                  <td className="px-3 py-2 text-muted-foreground">{roleLabel(r.role)}</td>
-                  <td className="px-3 py-2 text-right">{formatVnd(r.owed)}</td>
-                  <td className="px-3 py-2 text-right">{formatVnd(r.paid)}</td>
-                  <td
-                    className={`px-3 py-2 text-right font-medium ${
-                      r.remaining > 0 ? "text-amber-600" : r.remaining < 0 ? "text-rose-600" : "text-emerald-600"
-                    }`}
-                  >
-                    {formatVnd(r.remaining)}
+            </thead>
+            <tbody>
+              {withTimesheet.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-3 py-6 text-center text-muted-foreground">
+                    Chưa có lương ghi nhận từ chấm công trong kỳ {period.label}.
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-          {rows.length > 0 ? (
-            <tfoot>
-              <tr className="border-t bg-muted/30 font-semibold">
-                <td className="px-3 py-2" colSpan={2}>
-                  Tổng
-                </td>
-                <td className="px-3 py-2 text-right">{formatVnd(totals.owed)}</td>
-                <td className="px-3 py-2 text-right">{formatVnd(totals.paid)}</td>
-                <td className="px-3 py-2 text-right">{formatVnd(totals.remaining)}</td>
-              </tr>
-            </tfoot>
-          ) : null}
-        </table>
+              ) : (
+                withTimesheet.map((r) => (
+                  <tr key={r.userId} className="border-t">
+                    <td className="px-3 py-2 font-medium">
+                      <Link
+                        href={`/manager/reports/payout/${r.userId}?${ep.key}=${ep.value}`}
+                        className="hover:underline"
+                      >
+                        {r.userName}
+                      </Link>
+                    </td>
+                    <td className="px-3 py-2 text-muted-foreground">{roleLabel(r.role)}</td>
+                    <td className="px-3 py-2 text-right">{formatVnd(r.owed)}</td>
+                    <td className="px-3 py-2 text-right">{formatVnd(r.paid)}</td>
+                    <td
+                      className={`px-3 py-2 text-right font-medium ${
+                        r.remaining > 0 ? "text-amber-600" : r.remaining < 0 ? "text-rose-600" : "text-emerald-600"
+                      }`}
+                    >
+                      {formatVnd(r.remaining)}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+            {withTimesheet.length > 0 ? (
+              <tfoot>
+                <tr className="border-t bg-muted/30 font-semibold">
+                  <td className="px-3 py-2" colSpan={2}>
+                    Tổng
+                  </td>
+                  <td className="px-3 py-2 text-right">{formatVnd(totals.owed)}</td>
+                  <td className="px-3 py-2 text-right">{formatVnd(totals.paid)}</td>
+                  <td className="px-3 py-2 text-right">{formatVnd(totals.remaining)}</td>
+                </tr>
+              </tfoot>
+            ) : null}
+          </table>
+        </div>
       </div>
+
+      {/* 2) Chi cho người KHÔNG có chấm công — không có "phải trả" để đối soát */}
+      {offTimesheet.length > 0 ? (
+        <div>
+          <h2 className="mb-2 text-sm font-medium text-muted-foreground">
+            Chi ngoài chấm công (người không có timesheet)
+          </h2>
+          <div className="overflow-x-auto rounded-md border">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50 text-muted-foreground">
+                <tr>
+                  <th className="px-3 py-2 text-left font-medium">Người</th>
+                  <th className="px-3 py-2 text-left font-medium">Vai trò</th>
+                  <th className="px-3 py-2 text-right font-medium">Đã chi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {offTimesheet.map((r) => (
+                  <tr key={r.userId} className="border-t">
+                    <td className="px-3 py-2 font-medium">{r.userName}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{roleLabel(r.role)}</td>
+                    <td className="px-3 py-2 text-right">{formatVnd(r.paid)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t bg-muted/30 font-semibold">
+                  <td className="px-3 py-2" colSpan={2}>
+                    Tổng
+                  </td>
+                  <td className="px-3 py-2 text-right">{formatVnd(offTotal)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Người được trả không qua chấm công nên không có &quot;phải trả&quot; để đối soát — chỉ ghi
+            nhận số đã chi.
+          </p>
+        </div>
+      ) : null}
 
       {/* Ledger of actual payments in the period */}
       <div>
