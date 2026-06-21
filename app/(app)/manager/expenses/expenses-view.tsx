@@ -36,6 +36,9 @@ export async function ExpensesView({
     category: e.category,
     projectLabel: e.project ? `${e.project.client.name} / ${e.project.name}` : "Công ty",
     amount: e.amount,
+    projectId: e.projectId,
+    kind: e.kind,
+    note: e.note,
   }));
 
   const projectOptions = projects.map((p) => ({

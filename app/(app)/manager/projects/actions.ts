@@ -41,6 +41,16 @@ export async function createTask(formData: FormData) {
   revalidatePath(`/manager/projects/${parsed.data.projectId}`);
 }
 
+export async function updateTask(formData: FormData) {
+  await requireManager();
+  const id = String(formData.get("id"));
+  const projectId = String(formData.get("projectId"));
+  const name = String(formData.get("name") ?? "").trim();
+  if (!id || !name) return;
+  await prisma.task.update({ where: { id }, data: { name } });
+  revalidatePath(`/manager/projects/${projectId}`);
+}
+
 export async function deleteTask(formData: FormData) {
   await requireManager();
   const id = String(formData.get("id"));

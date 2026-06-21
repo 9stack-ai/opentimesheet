@@ -12,6 +12,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProjectStatusBadge } from "@/components/status-badge";
 import { AddTaskDialog } from "./add-task-dialog";
 import { AddAssignmentDialog } from "./add-assignment-dialog";
+import { EditTaskDialog } from "./edit-task-dialog";
+import { EditAssignmentDialog } from "./edit-assignment-dialog";
 
 export const dynamic = "force-dynamic";
 
@@ -187,17 +189,20 @@ export default async function ProjectDetailPage({
               {project.tasks.map((t) => (
                 <li key={t.id} className="flex items-center justify-between py-2 text-sm">
                   <span>{t.name}</span>
-                  {t._count.timeEntries === 0 ? (
-                    <form action={deleteTask}>
-                      <input type="hidden" name="id" value={t.id} />
-                      <input type="hidden" name="projectId" value={project.id} />
-                      <Button type="submit" variant="ghost" size="sm" className="text-destructive">
-                        Xoá
-                      </Button>
-                    </form>
-                  ) : (
-                    <span className="text-muted-foreground">{t._count.timeEntries} mục công</span>
-                  )}
+                  <div className="flex items-center gap-1">
+                    <EditTaskDialog taskId={t.id} projectId={project.id} name={t.name} />
+                    {t._count.timeEntries === 0 ? (
+                      <form action={deleteTask}>
+                        <input type="hidden" name="id" value={t.id} />
+                        <input type="hidden" name="projectId" value={project.id} />
+                        <Button type="submit" variant="ghost" size="sm" className="text-destructive">
+                          Xoá
+                        </Button>
+                      </form>
+                    ) : (
+                      <span className="text-muted-foreground">{t._count.timeEntries} mục công</span>
+                    )}
+                  </div>
                 </li>
               ))}
             </ul>
@@ -225,13 +230,22 @@ export default async function ProjectDetailPage({
                     Vốn: {formatVnd(a.costRateOverride ?? a.user.defaultCostRate)} · Bán:{" "}
                     {formatVnd(a.billableRateOverride ?? a.user.defaultBillableRate)}
                   </span>
-                  <form action={removeAssignment}>
-                    <input type="hidden" name="id" value={a.id} />
-                    <input type="hidden" name="projectId" value={project.id} />
-                    <Button type="submit" variant="ghost" size="sm" className="text-destructive">
-                      Xoá
-                    </Button>
-                  </form>
+                  <div className="flex items-center gap-1">
+                    <EditAssignmentDialog
+                      projectId={project.id}
+                      userId={a.userId}
+                      userName={a.user.name}
+                      costRateOverride={a.costRateOverride}
+                      billableRateOverride={a.billableRateOverride}
+                    />
+                    <form action={removeAssignment}>
+                      <input type="hidden" name="id" value={a.id} />
+                      <input type="hidden" name="projectId" value={project.id} />
+                      <Button type="submit" variant="ghost" size="sm" className="text-destructive">
+                        Xoá
+                      </Button>
+                    </form>
+                  </div>
                 </li>
               ))}
             </ul>

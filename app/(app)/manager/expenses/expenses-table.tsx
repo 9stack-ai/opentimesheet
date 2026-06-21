@@ -10,6 +10,10 @@ export type ExpenseRow = {
   category: string;
   projectLabel: string;
   amount: number;
+  // carried for the edit dialog (preserved on update)
+  projectId: string | null;
+  kind: string;
+  note: string | null;
 };
 
 type Project = { id: string; clientName: string; name: string };

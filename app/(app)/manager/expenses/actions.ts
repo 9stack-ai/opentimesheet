@@ -25,6 +25,28 @@ export async function createExpense(formData: FormData) {
   revalidatePath("/manager/irregular-expenses");
 }
 
+export async function updateExpense(formData: FormData) {
+  await requireManager();
+  const id = String(formData.get("id"));
+  if (!id) return;
+  const parsed = expenseSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return;
+  const d = parsed.data;
+  await prisma.expense.update({
+    where: { id },
+    data: {
+      projectId: d.projectId ?? null,
+      category: d.category,
+      kind: d.kind,
+      amount: d.amount,
+      date: new Date(d.date),
+      note: d.note ?? null,
+    },
+  });
+  revalidatePath("/manager/expenses");
+  revalidatePath("/manager/irregular-expenses");
+}
+
 export async function deleteExpense(formData: FormData) {
   await requireManager();
   const id = String(formData.get("id"));
