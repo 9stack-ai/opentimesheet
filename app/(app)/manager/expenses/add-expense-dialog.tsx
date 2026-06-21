@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { createExpense } from "./actions";
 
 const selectClass =
@@ -87,7 +88,7 @@ export function AddExpenseDialog({
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Huỷ
             </Button>
-            <Button type="submit">Lưu</Button>
+            <SubmitButton>Lưu</SubmitButton>
           </div>
         </form>
       </DialogContent>

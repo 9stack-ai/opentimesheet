@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { createIncome } from "./actions";
 
 export function AddIncomeDialog() {
@@ -50,7 +51,7 @@ export function AddIncomeDialog() {
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Huỷ
             </Button>
-            <Button type="submit">Lưu</Button>
+            <SubmitButton>Lưu</SubmitButton>
           </div>
         </form>
       </DialogContent>
