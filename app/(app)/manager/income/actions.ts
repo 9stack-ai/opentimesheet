@@ -47,7 +47,7 @@ export async function deleteIncome(formData: FormData) {
   await requireManager();
   const id = String(formData.get("id"));
   if (!id) return;
-  await prisma.income.delete({ where: { id } });
+  await prisma.income.deleteMany({ where: { id } }); // idempotent: no-op if already deleted (double-click safe)
   revalidatePath("/manager/income");
   revalidatePath("/manager/reports/finance");
 }

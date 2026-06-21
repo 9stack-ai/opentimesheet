@@ -138,7 +138,8 @@ export async function deleteEntry(formData: FormData) {
   if (!canModifyEntry(actor.role, existing.userId === actor.id, existing.status)) return;
   // Deleting a pushed entry would orphan its Redmine time entry — keep them in sync by blocking.
   if (existing.redmineTimeEntryId != null) return;
-  await prisma.timeEntry.delete({ where: { id } });
+  await prisma.timeEntry.deleteMany({ where: { id } }); // idempotent: no-op if already deleted
+
   revalidatePath("/timesheet");
 }
 

@@ -46,7 +46,7 @@ export async function deleteProject(formData: FormData) {
     prisma.expense.updateMany({ where: { projectId: id }, data: { projectId: null } }),
     prisma.assignment.deleteMany({ where: { projectId: id } }),
     prisma.task.deleteMany({ where: { projectId: id } }),
-    prisma.project.delete({ where: { id } }),
+    prisma.project.deleteMany({ where: { id } }), // idempotent: no-op if already deleted
   ]);
   revalidatePath(`/manager/clients/${clientId}`);
   redirect(`/manager/clients/${clientId}`);
@@ -77,7 +77,7 @@ export async function deleteTask(formData: FormData) {
   if (!id) return;
   const entries = await prisma.timeEntry.count({ where: { taskId: id } });
   if (entries > 0) return; // guard: task has logged time
-  await prisma.task.delete({ where: { id } });
+  await prisma.task.deleteMany({ where: { id } }); // idempotent: no-op if already deleted
   revalidatePath(`/manager/projects/${projectId}`);
 }
 
@@ -107,7 +107,7 @@ export async function removeAssignment(formData: FormData) {
   const id = String(formData.get("id"));
   const projectId = String(formData.get("projectId"));
   if (!id) return;
-  await prisma.assignment.delete({ where: { id } });
+  await prisma.assignment.deleteMany({ where: { id } }); // idempotent: no-op if already deleted
   revalidatePath(`/manager/projects/${projectId}`);
 }
 

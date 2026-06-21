@@ -27,6 +27,6 @@ export async function deleteDisbursement(formData: FormData) {
   await requireManager();
   const id = String(formData.get("id"));
   if (!id) return;
-  await prisma.disbursement.delete({ where: { id } });
+  await prisma.disbursement.deleteMany({ where: { id } }); // idempotent: no-op if already deleted (double-click safe)
   revalidatePath("/manager/disbursements");
 }

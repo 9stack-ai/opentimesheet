@@ -51,7 +51,7 @@ export async function deleteExpense(formData: FormData) {
   await requireManager();
   const id = String(formData.get("id"));
   if (!id) return;
-  await prisma.expense.delete({ where: { id } });
+  await prisma.expense.deleteMany({ where: { id } }); // idempotent: no-op if already deleted (double-click safe)
   revalidatePath("/manager/expenses");
   revalidatePath("/manager/irregular-expenses");
 }

@@ -30,7 +30,7 @@ export async function deleteClient(formData: FormData) {
   if (!id) return;
   const projectCount = await prisma.project.count({ where: { clientId: id } });
   if (projectCount > 0) return; // guard: keep clients that still have projects
-  await prisma.client.delete({ where: { id } });
+  await prisma.client.deleteMany({ where: { id } }); // idempotent: no-op if already deleted
   revalidatePath("/manager/clients");
   redirect("/manager/clients");
 }
