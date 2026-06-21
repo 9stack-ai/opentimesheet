@@ -4,9 +4,12 @@ import { ROLES } from "@/lib/roles";
 // Tax rates entered as a human percent (0–100, decimals allowed); converted to basis points on write.
 const taxPercent = z.coerce.number().min(0).max(100).default(0);
 
+// Login identifier: a username or an email. Stored in User.email (the unique login key).
+const loginIdentifier = z.string().trim().min(1).max(200);
+
 export const inviteUserSchema = z.object({
   name: z.string().min(1).max(120),
-  email: z.string().email(),
+  email: loginIdentifier,
   role: z.enum(ROLES),
   defaultCostRate: z.coerce.number().int().min(0).default(0),
   defaultBillableRate: z.coerce.number().int().min(0).default(0),

@@ -12,8 +12,8 @@ export function LoginForm() {
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <div className="grid gap-2">
-        <Label htmlFor="email">Email</Label>
-        <Input id="email" name="email" type="email" required autoComplete="email" placeholder="ban@congty.vn" />
+        <Label htmlFor="email">Tên đăng nhập</Label>
+        <Input id="email" name="email" type="text" required autoComplete="username" placeholder="username hoặc email" />
       </div>
       <div className="grid gap-2">
         <Label htmlFor="password">Mật khẩu</Label>

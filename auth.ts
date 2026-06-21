@@ -6,8 +6,10 @@ import { prisma } from "@/lib/db";
 import { verifyPassword } from "@/lib/password";
 import type { Role } from "@/lib/roles";
 
+// Login identifier may be a username or an email — the User.email column stores
+// whichever was assigned, and authorize() matches it exactly.
 const credentialsSchema = z.object({
-  email: z.string().email(),
+  email: z.string().trim().min(1),
   password: z.string().min(1),
 });
 
