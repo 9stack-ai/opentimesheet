@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/rbac";
+import { recordAudit } from "@/lib/audit";
 import { timeEntrySchema } from "@/lib/validation";
 import { effectiveRates } from "@/lib/rates";
 import { resolveTargetUserId, canModifyEntry } from "@/lib/timesheet-access";
@@ -75,7 +76,7 @@ export async function createEntry(formData: FormData) {
   if (targetUserId !== actor.id && !(await isActiveUser(targetUserId))) return;
   if (!(await isAssignedToTask(targetUserId, parsed.data.taskId))) return;
 
-  await prisma.timeEntry.create({
+  const created = await prisma.timeEntry.create({
     data: {
       userId: targetUserId,
       taskId: parsed.data.taskId,
@@ -85,6 +86,12 @@ export async function createEntry(formData: FormData) {
       status: "DRAFT",
     },
   });
+  await recordAudit(
+    actor,
+    "timeentry.create",
+    `Tạo công ${parsed.data.hours}h ngày ${parsed.data.date}${targetUserId !== actor.id ? " (chấm hộ)" : ""}`,
+    { type: "TimeEntry", id: created.id },
+  );
   revalidatePath("/timesheet");
 }
 
@@ -123,6 +130,10 @@ export async function updateEntry(formData: FormData) {
       ...(snapshot ?? {}),
     },
   });
+  await recordAudit(actor, "timeentry.update", `Sửa công ${parsed.data.hours}h ngày ${parsed.data.date}`, {
+    type: "TimeEntry",
+    id,
+  });
   revalidatePath("/timesheet");
 }
 
@@ -139,6 +150,7 @@ export async function deleteEntry(formData: FormData) {
   // Deleting a pushed entry would orphan its Redmine time entry — keep them in sync by blocking.
   if (existing.redmineTimeEntryId != null) return;
   await prisma.timeEntry.deleteMany({ where: { id } }); // idempotent: no-op if already deleted
+  await recordAudit(actor, "timeentry.delete", "Xoá 1 dòng công", { type: "TimeEntry", id });
 
   revalidatePath("/timesheet");
 }
@@ -150,7 +162,7 @@ export async function submitPeriod(formData: FormData) {
   const end = String(formData.get("end"));
   if (!start || !end) return;
   if (targetUserId !== actor.id && !(await isActiveUser(targetUserId))) return;
-  await prisma.timeEntry.updateMany({
+  const res = await prisma.timeEntry.updateMany({
     where: {
       userId: targetUserId,
       status: { in: ["DRAFT", "REJECTED"] },
@@ -158,5 +170,10 @@ export async function submitPeriod(formData: FormData) {
     },
     data: { status: "SUBMITTED" },
   });
+  await recordAudit(
+    actor,
+    "timeentry.submit",
+    `Gửi duyệt ${res.count} công (${start.slice(0, 10)} → ${end.slice(0, 10)})${targetUserId !== actor.id ? " (hộ)" : ""}`,
+  );
   revalidatePath("/timesheet");
 }

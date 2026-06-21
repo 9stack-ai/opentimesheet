@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireManager } from "@/lib/rbac";
+import { recordAudit } from "@/lib/audit";
 import { effectiveRates } from "@/lib/rates";
 import { nowSaigon } from "@/lib/clock";
 import { pushApprovedEntries, retryPush } from "@/lib/redmine/push";
@@ -63,12 +64,13 @@ export async function approveEntries(formData: FormData) {
   // Failures are recorded per entry and never affect the already-committed approval.
   await pushApprovedEntries(entries.map((e) => e.id));
 
+  await recordAudit(manager, "timeentry.approve", `Duyệt ${entries.length} công`);
   revalidatePath("/manager/approvals");
 }
 
 /** Reject SUBMITTED entries with an optional reason; returns them to the freelancer to edit. */
 export async function rejectEntries(formData: FormData) {
-  await requireManager();
+  const manager = await requireManager();
   const ids = formData.getAll("entryId").map(String).filter(Boolean);
   const reason = String(formData.get("reason") ?? "").trim().slice(0, 500);
   if (ids.length === 0) return;
@@ -77,6 +79,7 @@ export async function rejectEntries(formData: FormData) {
     where: { id: { in: ids }, status: "SUBMITTED" },
     data: { status: "REJECTED", rejectReason: reason || null },
   });
+  await recordAudit(manager, "timeentry.reject", `Từ chối ${ids.length} công${reason ? `: ${reason}` : ""}`);
   revalidatePath("/manager/approvals");
 }
 

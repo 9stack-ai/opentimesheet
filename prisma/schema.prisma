@@ -161,6 +161,23 @@ model Disbursement {
   @@index([periodLabel])
 }
 
+// Audit trail: who did what, when. actorName is denormalized so a log survives
+// the actor's deletion; details is a human-readable Vietnamese summary.
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String? // null if the actor was deleted/system
+  actorName  String
+  actorRole  String
+  action     String // machine code, e.g. "timeentry.create"
+  summary    String // human-readable summary
+  targetType String?
+  targetId   String?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([actorId])
+}
+
 model FixedCost {
   id            String    @id @default(cuid())
   name          String

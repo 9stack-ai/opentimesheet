@@ -12,6 +12,7 @@ import {
 import { createInviteToken, hashVerifier } from "@/lib/auth-tokens";
 import { hashPassword } from "@/lib/password";
 import { percentToBps } from "@/lib/payroll";
+import { recordAudit } from "@/lib/audit";
 
 const INVITE_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 
@@ -22,7 +23,7 @@ export async function createUserWithPassword(
   _prev: InviteResult | undefined,
   formData: FormData,
 ): Promise<InviteResult> {
-  await requireRole(["ADMIN"]);
+  const admin = await requireRole(["ADMIN"]);
 
   const parsed = createUserSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { ok: false, message: "Dữ liệu không hợp lệ (mật khẩu tối thiểu 8 ký tự)." };
@@ -47,6 +48,7 @@ export async function createUserWithPassword(
     },
   });
 
+  await recordAudit(admin, "user.create", `Tạo tài khoản ${data.email} (${data.role})`);
   revalidatePath("/admin/users");
   return { ok: true, message: `Đã tạo tài khoản ${data.email}.` };
 }
@@ -58,7 +60,7 @@ export async function adminSetPassword(
   _prev: SetPasswordResult | undefined,
   formData: FormData,
 ): Promise<SetPasswordResult> {
-  await requireRole(["ADMIN"]);
+  const admin = await requireRole(["ADMIN"]);
   const parsed = adminSetPasswordSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { ok: false, message: "Mật khẩu phải có ít nhất 8 ký tự." };
   const { id, password } = parsed.data;
@@ -76,12 +78,16 @@ export async function adminSetPassword(
     // Invalidate any outstanding invite link now that a password exists.
     prisma.inviteToken.deleteMany({ where: { userId: id } }),
   ]);
+  await recordAudit(admin, "user.password_reset", "Đặt lại mật khẩu cho 1 tài khoản", {
+    type: "User",
+    id,
+  });
   revalidatePath("/admin/users");
   return { ok: true, message: "Đã đặt lại mật khẩu." };
 }
 
 export async function inviteUser(_prev: InviteResult | undefined, formData: FormData): Promise<InviteResult> {
-  await requireRole(["ADMIN"]);
+  const admin = await requireRole(["ADMIN"]);
 
   const parsed = inviteUserSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { ok: false, message: "Dữ liệu không hợp lệ." };
@@ -110,13 +116,14 @@ export async function inviteUser(_prev: InviteResult | undefined, formData: Form
     },
   });
 
+  await recordAudit(admin, "user.invite", `Mời tài khoản ${data.email} (${data.role})`);
   revalidatePath("/admin/users");
   // No email infra in v1: surface the invite link for the admin to share manually.
   return { ok: true, message: `Đã mời ${data.email}.`, inviteLink: `/set-password/${linkToken}` };
 }
 
 export async function updateUser(formData: FormData): Promise<void> {
-  await requireRole(["ADMIN"]);
+  const admin = await requireRole(["ADMIN"]);
   const parsed = updateUserSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return;
   const { id, taxWithholdingPercent, employerCostPercent, contactEmail, ...rest } = parsed.data;
@@ -136,14 +143,22 @@ export async function updateUser(formData: FormData): Promise<void> {
       employerCostRateBps: percentToBps(employerCostPercent),
     },
   });
+  await recordAudit(admin, "user.update", `Sửa tài khoản ${rest.email} (${rest.role})`, {
+    type: "User",
+    id,
+  });
   revalidatePath("/admin/users");
 }
 
 export async function setUserStatus(formData: FormData): Promise<void> {
-  await requireRole(["ADMIN"]);
+  const admin = await requireRole(["ADMIN"]);
   const id = String(formData.get("id"));
   const status = String(formData.get("status"));
   if (status !== "ACTIVE" && status !== "DISABLED") return;
   await prisma.user.update({ where: { id }, data: { status } });
+  await recordAudit(admin, "user.status", status === "DISABLED" ? "Vô hiệu hoá 1 tài khoản" : "Kích hoạt 1 tài khoản", {
+    type: "User",
+    id,
+  });
   revalidatePath("/admin/users");
 }

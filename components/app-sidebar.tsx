@@ -10,6 +10,7 @@ import {
   CircleDollarSign,
   Clock,
   Coins,
+  History,
   LayoutDashboard,
   LogOut,
   Plug,
@@ -69,7 +70,10 @@ const COSTS: Item[] = [
   { href: "/manager/irregular-expenses", label: "Chi bất thường", icon: Zap },
   { href: "/manager/fixed-costs", label: "Chi phí cố định", icon: Repeat },
 ];
-const ADMIN_ITEMS: Item[] = [{ href: "/admin/users", label: "Người dùng", icon: Users }];
+const ADMIN_ITEMS: Item[] = [
+  { href: "/admin/users", label: "Người dùng", icon: Users },
+  { href: "/admin/audit", label: "Nhật ký hoạt động", icon: History },
+];
 
 function NavRow({ item }: { item: Item }) {
   const pathname = usePathname();
