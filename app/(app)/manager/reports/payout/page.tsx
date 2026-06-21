@@ -13,6 +13,7 @@ import {
 import { nowSaigon } from "@/lib/clock";
 import { Button } from "@/components/ui/button";
 import { PayoutTable } from "./payout-table";
+import { MonthPicker } from "./month-picker";
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +45,7 @@ export default async function PayoutReportPage({
     { gross: 0, taxWithheld: 0, net: 0, employerCost: 0, totalCompanyCost: 0 },
   );
   const exportQuery = period.kind === "week" ? `week=${period.label}` : `month=${period.label}`;
+  const monthValue = period.kind === "month" ? period.label : monthPeriod(cy, cm).label;
 
   return (
     <div className="flex flex-col gap-6">
@@ -51,6 +53,7 @@ export default async function PayoutReportPage({
 
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-sm text-muted-foreground">Kỳ: {period.label}</span>
+        <MonthPicker value={monthValue} />
         <Button variant="outline" size="sm" asChild>
           <Link href={`/manager/reports/payout?month=${monthPeriod(cy, cm).label}`}>Tháng này</Link>
         </Button>
