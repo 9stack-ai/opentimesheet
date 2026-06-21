@@ -5,7 +5,7 @@ import { atLeastManager } from "@/lib/roles";
 import { roleLabel } from "@/lib/labels";
 import { formatVnd } from "@/lib/money";
 import { nowSaigon } from "@/lib/clock";
-import { resolvePeriod, type Period, type PeriodSearchParams } from "@/lib/period";
+import { resolvePeriod, periodParam, type Period, type PeriodSearchParams } from "@/lib/period";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FinanceChartCard } from "@/components/charts/finance-chart-card";
 import { HoursBarChart } from "@/components/charts/hours-bar-chart";
@@ -14,9 +14,19 @@ import { managerKpis, managerMonthlyFinance, freelancerMonthlyHours } from "@/li
 
 export const dynamic = "force-dynamic";
 
-function Kpi({ label, value, tone }: { label: string; value: string; tone?: string }) {
-  return (
-    <Card>
+function Kpi({
+  label,
+  value,
+  tone,
+  href,
+}: {
+  label: string;
+  value: string;
+  tone?: string;
+  href?: string;
+}) {
+  const card = (
+    <Card className={href ? "h-full transition-colors hover:border-primary/50 hover:bg-accent/40" : undefined}>
       <CardHeader className="pb-1">
         <CardDescription>{label}</CardDescription>
       </CardHeader>
@@ -25,22 +35,40 @@ function Kpi({ label, value, tone }: { label: string; value: string; tone?: stri
       </CardContent>
     </Card>
   );
+  return href ? (
+    <Link href={href} className="block">
+      {card}
+    </Link>
+  ) : (
+    card
+  );
 }
 
 async function ManagerCharts({ period }: { period: Period }) {
   const [kpis, finance] = await Promise.all([managerKpis(period), managerMonthlyFinance(12)]);
+  const ep = periodParam(period);
+  const pq = `${ep.key}=${ep.value}`; // preserve the selected period when drilling in
   return (
     <>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <Kpi label={`Nguồn thu (${period.label})`} value={formatVnd(kpis.income)} />
-        <Kpi label={`Số dư thực tế (${period.label})`} value={formatVnd(kpis.actualNet)} />
-        <Kpi label={`Số dư dự kiến (${period.label})`} value={formatVnd(kpis.projectedNet)} />
+        <Kpi label={`Nguồn thu (${period.label})`} value={formatVnd(kpis.income)} href="/manager/income" />
+        <Kpi
+          label={`Số dư thực tế (${period.label})`}
+          value={formatVnd(kpis.actualNet)}
+          href={`/manager/reports/finance?${pq}`}
+        />
+        <Kpi
+          label={`Số dư dự kiến (${period.label})`}
+          value={formatVnd(kpis.projectedNet)}
+          href={`/manager/reports/finance?${pq}`}
+        />
         <Kpi
           label={`Đang chờ chi (${period.label})`}
           value={formatVnd(kpis.unpaidPayroll)}
           tone={kpis.unpaidPayroll > 0 ? "text-amber-600" : "text-emerald-600"}
+          href={`/manager/disbursements?${pq}`}
         />
-        <Kpi label="Dự án đang chạy" value={String(kpis.activeProjects)} />
+        <Kpi label="Dự án đang chạy" value={String(kpis.activeProjects)} href="/manager/clients" />
       </div>
       <FinanceChartCard data={finance} />
     </>
