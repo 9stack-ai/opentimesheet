@@ -5,7 +5,7 @@ import { atLeastManager } from "@/lib/roles";
 import { roleLabel } from "@/lib/labels";
 import { formatVnd } from "@/lib/money";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FinanceBarChart } from "@/components/charts/finance-bar-chart";
+import { FinanceChartCard } from "@/components/charts/finance-chart-card";
 import { HoursBarChart } from "@/components/charts/hours-bar-chart";
 import { managerKpis, managerMonthlyFinance, freelancerMonthlyHours } from "@/lib/dashboard";
 
@@ -25,7 +25,7 @@ function Kpi({ label, value }: { label: string; value: string }) {
 }
 
 async function ManagerCharts() {
-  const [kpis, finance] = await Promise.all([managerKpis(), managerMonthlyFinance()]);
+  const [kpis, finance] = await Promise.all([managerKpis(), managerMonthlyFinance(12)]);
   return (
     <>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -34,15 +34,7 @@ async function ManagerCharts() {
         <Kpi label="Lợi nhuận tháng này" value={formatVnd(kpis.net)} />
         <Kpi label="Dự án đang chạy" value={String(kpis.activeProjects)} />
       </div>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Doanh thu · Chi phí · Lợi nhuận (6 tháng)</CardTitle>
-          <CardDescription>Theo tháng, dựa trên giờ công đã duyệt + chi phí.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <FinanceBarChart data={finance} />
-        </CardContent>
-      </Card>
+      <FinanceChartCard data={finance} />
     </>
   );
 }
