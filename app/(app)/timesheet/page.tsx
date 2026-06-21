@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { formatISODate, resolvePeriod, type PeriodSearchParams } from "@/lib/period";
 import { nowSaigon } from "@/lib/clock";
 import { formatVnd } from "@/lib/money";
-import { paidToUserInPeriod } from "@/lib/disbursement-db";
+import { lifetimeBalanceForUser } from "@/lib/disbursement-db";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PeriodNav } from "@/components/reports/period-nav";
@@ -97,10 +97,10 @@ export default async function TimesheetPage({
   const approvedGross = Math.round(approvedGrossRaw);
   const approvedTax = Math.round(approvedTaxRaw);
   const approvedEmployer = Math.round(approvedEmployerRaw);
-  const approvedPayout = approvedGross - approvedTax; // thực nhận (net)
-  // Đã nhận = thực chi cho người này trong kỳ; còn chưa nhận = net − đã nhận (clamped ≥ 0).
-  const paidInPeriod = approvedGross > 0 ? await paidToUserInPeriod(targetUserId, period) : 0;
-  const remainingNet = Math.max(0, approvedPayout - paidInPeriod);
+  const approvedPayout = approvedGross - approvedTax; // thực nhận (net) trong kỳ
+  // Công nợ luỹ kế (toàn thời gian): tổng net đã duyệt vs tổng đã thực chi — công nợ thật của người này.
+  const life = await lifetimeBalanceForUser(targetUserId);
+  const showPay = approvedGross > 0 || life.netOwed > 0 || life.paid > 0;
   const hasDraft = entries.some((e) => e.status === "DRAFT" || e.status === "REJECTED");
 
   // Serialise tasks to plain objects for client components.
@@ -151,34 +151,47 @@ export default async function TimesheetPage({
         </p>
       ) : null}
 
-      {approvedGross > 0 ? (
+      {showPay ? (
         <Card>
-          <CardContent className="flex flex-col gap-2 py-4 text-sm sm:max-w-md">
-            <div className="font-medium">Thu nhập đã duyệt — kỳ {period.label}</div>
-            <PayRow label="Lương gộp (trước thuế)" value={approvedGross} />
-            {approvedTax > 0 ? (
-              <PayRow label={`− Thuế TNCN công ty giữ lại (${pct(approvedTax, approvedGross)})`} value={approvedTax} />
+          <CardContent className="flex flex-col gap-3 py-4 text-sm sm:max-w-md">
+            {approvedGross > 0 ? (
+              <div className="flex flex-col gap-2">
+                <div className="font-medium">Thu nhập đã duyệt — kỳ {period.label}</div>
+                <PayRow label="Lương gộp (trước thuế)" value={approvedGross} />
+                {approvedTax > 0 ? (
+                  <PayRow
+                    label={`− Thuế TNCN công ty giữ lại (${pct(approvedTax, approvedGross)})`}
+                    value={approvedTax}
+                  />
+                ) : null}
+                <div className="flex items-center justify-between border-t pt-2 font-semibold">
+                  <span>Thực nhận (net)</span>
+                  <span className="text-emerald-600">{formatVnd(approvedPayout)}</span>
+                </div>
+                {approvedEmployer > 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    Ngoài lương, công ty đóng BH cho bạn: {formatVnd(approvedEmployer)} (
+                    {pct(approvedEmployer, approvedGross)}) — không trừ vào thực nhận.
+                  </p>
+                ) : null}
+              </div>
             ) : null}
-            <div className="mt-1 flex items-center justify-between border-t pt-2 font-semibold">
-              <span>Thực nhận (net)</span>
-              <span className="text-emerald-600">{formatVnd(approvedPayout)}</span>
-            </div>
-            <PayRow label="Đã nhận" value={paidInPeriod} muted />
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Còn chưa nhận</span>
-              <span className={`font-medium ${remainingNet > 0 ? "text-amber-600" : "text-emerald-600"}`}>
-                {formatVnd(remainingNet)}
-              </span>
-            </div>
-            {approvedEmployer > 0 ? (
-              <p className="mt-1 text-xs text-muted-foreground">
-                Ngoài lương, công ty đóng BH cho bạn: {formatVnd(approvedEmployer)} (
-                {pct(approvedEmployer, approvedGross)}) — không trừ vào thực nhận.
+
+            <div className={`flex flex-col gap-2 ${approvedGross > 0 ? "border-t pt-3" : ""}`}>
+              <div className="font-medium">Công nợ luỹ kế (toàn thời gian)</div>
+              <PayRow label="Tổng thực nhận đã duyệt" value={life.netOwed} muted />
+              <PayRow label="Đã nhận" value={life.paid} muted />
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Còn chưa nhận</span>
+                <span className={`font-medium ${life.remaining > 0 ? "text-amber-600" : "text-emerald-600"}`}>
+                  {formatVnd(life.remaining)}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Thuế giữ lại được nộp cho cơ quan thuế. &quot;Còn chưa nhận&quot; = tổng thực nhận − tổng đã nhận
+                (toàn thời gian).
               </p>
-            ) : null}
-            <p className="text-xs text-muted-foreground">
-              Thuế giữ lại được nộp cho cơ quan thuế. &quot;Còn chưa nhận&quot; = thực nhận − đã nhận trong kỳ.
-            </p>
+            </div>
           </CardContent>
         </Card>
       ) : null}

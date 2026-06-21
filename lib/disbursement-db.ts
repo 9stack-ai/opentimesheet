@@ -82,3 +82,29 @@ export async function paidToUserInPeriod(userId: string, period: Period): Promis
   });
   return agg._sum.amount ?? 0;
 }
+
+export type LifetimeBalance = {
+  netOwed: number; // Σ thực nhận (net) từ MỌI công đã duyệt (toàn thời gian)
+  paid: number; // Σ đã thực chi cho người này (toàn thời gian)
+  remaining: number; // còn chưa nhận = max(0, netOwed − paid)
+};
+
+/** All-time net owed vs paid for one person — the true outstanding balance (không phụ thuộc kỳ),
+ *  dùng cho phần "công nợ luỹ kế" ở màn hình cá nhân. Net = round(Σ gross) − round(Σ tax). */
+export async function lifetimeBalanceForUser(userId: string): Promise<LifetimeBalance> {
+  const [entries, paidAgg] = await Promise.all([
+    prisma.timeEntry.findMany({
+      where: { userId, status: "APPROVED" },
+      select: { hours: true, costRateSnapshot: true, taxRateSnapshot: true },
+    }),
+    prisma.disbursement.aggregate({ where: { userId }, _sum: { amount: true } }),
+  ]);
+  const grossRaw = entries.reduce((s, e) => s + Number(e.hours) * (e.costRateSnapshot ?? 0), 0);
+  const taxRaw = entries.reduce(
+    (s, e) => s + (Number(e.hours) * (e.costRateSnapshot ?? 0) * (e.taxRateSnapshot ?? 0)) / 10000,
+    0,
+  );
+  const netOwed = Math.round(grossRaw) - Math.round(taxRaw);
+  const paid = paidAgg._sum.amount ?? 0;
+  return { netOwed, paid, remaining: Math.max(0, netOwed - paid) };
+}
