@@ -1,7 +1,8 @@
 "use client";
 
+import * as React from "react";
 import { DataTable } from "@/components/data-table/data-table";
-import { incomeColumns } from "./income-columns";
+import { buildIncomeColumns } from "./income-columns";
 import { AddIncomeDialog } from "./add-income-dialog";
 
 export type IncomeRow = {
@@ -10,16 +11,22 @@ export type IncomeRow = {
   source: string;
   amount: number;
   note: string | null;
+  // gắn dự án (tuỳ chọn) — preserved/editable
+  projectId: string | null;
+  projectLabel: string | null;
 };
 
-export function IncomeTable({ data }: { data: IncomeRow[] }) {
+type Project = { id: string; clientName: string; name: string };
+
+export function IncomeTable({ data, projects }: { data: IncomeRow[]; projects: Project[] }) {
+  const columns = React.useMemo(() => buildIncomeColumns(projects), [projects]);
   return (
     <DataTable
-      columns={incomeColumns}
+      columns={columns}
       data={data}
       searchKey="source"
       searchPlaceholder="Tìm theo nguồn thu…"
-      toolbar={<AddIncomeDialog />}
+      toolbar={<AddIncomeDialog projects={projects} />}
     />
   );
 }

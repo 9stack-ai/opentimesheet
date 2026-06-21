@@ -116,6 +116,7 @@ export const expenseSchema = z.object({
 // Date is optional — undated income sits in the ledger but is excluded from a period's Tổng thu.
 export const incomeSchema = z.object({
   source: z.string().min(1).max(200),
+  projectId: optionalString, // null = không gắn dự án (thu cấp công ty)
   amount: z.coerce.number().int().positive(),
   date: optionalDateString,
   note: z.string().max(500).optional(),

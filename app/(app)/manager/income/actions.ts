@@ -21,6 +21,7 @@ export async function createIncome(formData: FormData) {
   const created = await prisma.income.create({
     data: {
       source: d.source,
+      projectId: d.projectId ?? null,
       amount: d.amount,
       date: d.date ? new Date(d.date) : null,
       note: d.note ?? null,
@@ -45,6 +46,7 @@ export async function updateIncome(formData: FormData) {
     where: { id },
     data: {
       source: d.source,
+      projectId: d.projectId ?? null,
       amount: d.amount,
       date: d.date ? new Date(d.date) : null,
       note: d.note ?? null,

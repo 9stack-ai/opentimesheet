@@ -19,10 +19,22 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { updateIncome, deleteIncome } from "./actions";
 import type { IncomeRow } from "./income-table";
 
-export function IncomeRowActions({ income }: { income: IncomeRow }) {
+const selectClass =
+  "h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none";
+
+type Project = { id: string; clientName: string; name: string };
+
+export function IncomeRowActions({
+  income,
+  projects,
+}: {
+  income: IncomeRow;
+  projects: Project[];
+}) {
   const [editOpen, setEditOpen] = React.useState(false);
 
   return (
@@ -71,10 +83,26 @@ export function IncomeRowActions({ income }: { income: IncomeRow }) {
                 id={`amount-${income.id}`}
                 name="amount"
                 type="number"
-                min={0}
+                min={1}
                 defaultValue={income.amount}
                 required
               />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor={`proj-${income.id}`}>Dự án</Label>
+              <select
+                id={`proj-${income.id}`}
+                name="projectId"
+                defaultValue={income.projectId ?? ""}
+                className={selectClass}
+              >
+                <option value="">Cấp công ty (không gắn dự án)</option>
+                {projects.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.clientName} / {p.name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="grid gap-2">
               <Label htmlFor={`date-${income.id}`}>Ngày (tuỳ chọn)</Label>
@@ -90,7 +118,7 @@ export function IncomeRowActions({ income }: { income: IncomeRow }) {
                   Huỷ
                 </Button>
               </DialogClose>
-              <Button type="submit">Lưu</Button>
+              <SubmitButton>Lưu</SubmitButton>
             </DialogFooter>
           </form>
         </DialogContent>

@@ -15,7 +15,12 @@ import { Label } from "@/components/ui/label";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { createIncome } from "./actions";
 
-export function AddIncomeDialog() {
+const selectClass =
+  "h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none";
+
+type Project = { id: string; clientName: string; name: string };
+
+export function AddIncomeDialog({ projects = [] }: { projects?: Project[] }) {
   const [open, setOpen] = React.useState(false);
 
   return (
@@ -37,7 +42,18 @@ export function AddIncomeDialog() {
           </div>
           <div className="grid gap-2">
             <Label htmlFor="income-amount">Số tiền (VND)</Label>
-            <Input id="income-amount" name="amount" type="number" min={0} placeholder="Số tiền" required />
+            <Input id="income-amount" name="amount" type="number" min={1} placeholder="Số tiền" required />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="income-project">Dự án (tuỳ chọn)</Label>
+            <select id="income-project" name="projectId" defaultValue="" className={selectClass}>
+              <option value="">Cấp công ty (không gắn dự án)</option>
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.clientName} / {p.name}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="income-date">Ngày (tuỳ chọn)</Label>
