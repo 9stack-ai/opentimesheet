@@ -17,7 +17,8 @@ datasource db {
 model User {
   id                  String       @id @default(cuid())
   name                String
-  email               String       @unique
+  email               String       @unique // login identifier (username)
+  contactEmail        String? // contact email address (separate from login)
   passwordHash        String?
   role                String       @default("FREELANCER") // ADMIN | MANAGER | EMPLOYEE | FREELANCER
   status              String       @default("INVITED") // ACTIVE | INVITED | DISABLED

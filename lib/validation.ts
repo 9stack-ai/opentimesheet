@@ -7,9 +7,16 @@ const taxPercent = z.coerce.number().min(0).max(100).default(0);
 // Login identifier: a username or an email. Stored in User.email (the unique login key).
 const loginIdentifier = z.string().trim().min(1).max(200);
 
+// Optional contact email (separate from the login). Blank → undefined.
+const optionalEmail = z.preprocess(
+  (v) => (v === "" || v === undefined || v === null ? undefined : v),
+  z.string().email().optional(),
+);
+
 export const inviteUserSchema = z.object({
   name: z.string().min(1).max(120),
   email: loginIdentifier,
+  contactEmail: optionalEmail,
   role: z.enum(ROLES),
   defaultCostRate: z.coerce.number().int().min(0).default(0),
   defaultBillableRate: z.coerce.number().int().min(0).default(0),
@@ -20,6 +27,8 @@ export const inviteUserSchema = z.object({
 export const updateUserSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1).max(120),
+  email: loginIdentifier,
+  contactEmail: optionalEmail,
   role: z.enum(ROLES),
   defaultCostRate: z.coerce.number().int().min(0),
   defaultBillableRate: z.coerce.number().int().min(0),

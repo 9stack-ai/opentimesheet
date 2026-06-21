@@ -36,6 +36,7 @@ export async function createUserWithPassword(
     data: {
       name: data.name,
       email: data.email,
+      contactEmail: data.contactEmail ?? null,
       role: data.role,
       status: "ACTIVE",
       defaultCostRate: data.defaultCostRate,
@@ -96,6 +97,7 @@ export async function inviteUser(_prev: InviteResult | undefined, formData: Form
     data: {
       name: data.name,
       email: data.email,
+      contactEmail: data.contactEmail ?? null,
       role: data.role,
       status: "INVITED",
       defaultCostRate: data.defaultCostRate,
@@ -117,11 +119,19 @@ export async function updateUser(formData: FormData): Promise<void> {
   await requireRole(["ADMIN"]);
   const parsed = updateUserSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return;
-  const { id, taxWithholdingPercent, employerCostPercent, ...rest } = parsed.data;
+  const { id, taxWithholdingPercent, employerCostPercent, contactEmail, ...rest } = parsed.data;
+  // rest = { name, email (login/username), role, defaultCostRate, defaultBillableRate }
+  // Guard: the new username must stay unique — skip silently if another account already uses it.
+  const clash = await prisma.user.findFirst({
+    where: { email: rest.email, NOT: { id } },
+    select: { id: true },
+  });
+  if (clash) return;
   await prisma.user.update({
     where: { id },
     data: {
       ...rest,
+      contactEmail: contactEmail ?? null,
       taxWithholdingRateBps: percentToBps(taxWithholdingPercent),
       employerCostRateBps: percentToBps(employerCostPercent),
     },

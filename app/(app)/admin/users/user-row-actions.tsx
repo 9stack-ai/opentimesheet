@@ -84,8 +84,22 @@ export function UserRowActions({ user }: { user: UserRow }) {
           <form action={updateUser} onSubmit={() => setEditOpen(false)} className="flex flex-col gap-4">
             <input type="hidden" name="id" value={user.id} />
             <div className="grid gap-2">
-              <Label htmlFor={`name-${user.id}`}>Tên</Label>
+              <Label htmlFor={`name-${user.id}`}>Tên hiển thị</Label>
               <Input id={`name-${user.id}`} name="name" defaultValue={user.name} required />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor={`username-${user.id}`}>Tên đăng nhập (username)</Label>
+              <Input id={`username-${user.id}`} name="email" defaultValue={user.email} required />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor={`contact-${user.id}`}>Email (liên hệ)</Label>
+              <Input
+                id={`contact-${user.id}`}
+                name="contactEmail"
+                type="email"
+                defaultValue={user.contactEmail ?? ""}
+                placeholder="email@congty.vn"
+              />
             </div>
             <div className="grid gap-2">
               <Label>Vai trò</Label>

@@ -16,8 +16,15 @@ export const userColumns: ColumnDef<UserRow>[] = [
   },
   {
     accessorKey: "email",
-    header: ({ column }) => <ColumnHeader column={column} title="Email" />,
+    header: ({ column }) => <ColumnHeader column={column} title="Tên đăng nhập" />,
     cell: ({ row }) => <span className="text-muted-foreground">{row.original.email}</span>,
+  },
+  {
+    accessorKey: "contactEmail",
+    header: "Email",
+    cell: ({ row }) => (
+      <span className="text-muted-foreground">{row.original.contactEmail ?? "—"}</span>
+    ),
   },
   {
     accessorKey: "role",

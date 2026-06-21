@@ -10,6 +10,7 @@ export default async function UsersPage() {
       id: true,
       name: true,
       email: true,
+      contactEmail: true,
       role: true,
       status: true,
       defaultCostRate: true,

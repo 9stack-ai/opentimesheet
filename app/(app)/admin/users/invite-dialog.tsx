@@ -49,8 +49,12 @@ export function InviteDialog() {
             <Input id="invite-name" name="name" required />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="invite-email">Email</Label>
-            <Input id="invite-email" name="email" type="email" required />
+            <Label htmlFor="invite-email">Tên đăng nhập (username)</Label>
+            <Input id="invite-email" name="email" type="text" autoComplete="off" required />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="invite-contact">Email (liên hệ, tuỳ chọn)</Label>
+            <Input id="invite-contact" name="contactEmail" type="email" placeholder="email@congty.vn" />
           </div>
           <div className="grid gap-2">
             <Label>Vai trò</Label>

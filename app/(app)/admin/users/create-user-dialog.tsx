@@ -49,8 +49,12 @@ export function CreateUserDialog() {
             <Input id="create-name" name="name" required />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="create-email">Email</Label>
-            <Input id="create-email" name="email" type="email" required />
+            <Label htmlFor="create-email">Tên đăng nhập (username)</Label>
+            <Input id="create-email" name="email" type="text" autoComplete="off" required />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="create-contact">Email (liên hệ, tuỳ chọn)</Label>
+            <Input id="create-contact" name="contactEmail" type="email" placeholder="email@congty.vn" />
           </div>
           <div className="grid gap-2">
             <Label htmlFor="create-password">Mật khẩu</Label>
