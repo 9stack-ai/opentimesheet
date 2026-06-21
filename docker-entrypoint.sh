@@ -3,7 +3,7 @@ set -e
 
 echo "[entrypoint] Provisioning PostgreSQL schema (prisma db push)…"
 n=0
-until pnpm exec prisma db push --schema=prisma/schema.prod.prisma; do
+until pnpm exec prisma db push --schema=prisma/schema.prod.prisma --url "$DATABASE_URL"; do
   n=$((n + 1))
   if [ "$n" -ge 10 ]; then
     echo "[entrypoint] db push failed after $n attempts" >&2
