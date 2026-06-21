@@ -113,9 +113,8 @@ export function AppSidebar({ user }: { user: { name: string; role: Role } }) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">
-                  9s
-                </div>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/logo.svg" alt="" width={32} height={32} className="size-8 rounded-lg" />
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">9stimesheet</span>
                   <span className="truncate text-xs text-muted-foreground">Chấm công &amp; Chi phí</span>
