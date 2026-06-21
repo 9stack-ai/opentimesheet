@@ -1,0 +1,128 @@
+// PRODUCTION schema — PostgreSQL. Models are IDENTICAL to prisma/schema.prisma (SQLite dev);
+// only the datasource provider differs. Provisioned with:
+//   prisma db push --schema=prisma/schema.prod.prisma
+// Keep this file in sync with prisma/schema.prisma whenever models change.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+  runtime  = "nodejs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                  String       @id @default(cuid())
+  name                String
+  email               String       @unique
+  passwordHash        String?
+  role                String       @default("FREELANCER") // ADMIN | MANAGER | EMPLOYEE | FREELANCER
+  status              String       @default("INVITED") // ACTIVE | INVITED | DISABLED
+  defaultCostRate     Int          @default(0) // VND/hour — what we pay
+  defaultBillableRate Int          @default(0) // VND/hour — what the client pays
+  assignments         Assignment[]
+  timeEntries         TimeEntry[]
+  inviteToken         InviteToken?
+  createdAt           DateTime     @default(now())
+}
+
+model Client {
+  id        String    @id @default(cuid())
+  name      String
+  contact   String?
+  notes     String?
+  projects  Project[]
+  createdAt DateTime  @default(now())
+}
+
+model Project {
+  id          String       @id @default(cuid())
+  clientId    String
+  client      Client       @relation(fields: [clientId], references: [id])
+  name        String
+  status      String       @default("ACTIVE") // ACTIVE | ARCHIVED
+  startDate   DateTime?
+  endDate     DateTime?
+  tasks       Task[]
+  assignments Assignment[]
+  expenses    Expense[]
+  createdAt   DateTime     @default(now())
+}
+
+model Task {
+  id          String      @id @default(cuid())
+  projectId   String
+  project     Project     @relation(fields: [projectId], references: [id])
+  name        String
+  status      String      @default("open")
+  timeEntries TimeEntry[]
+}
+
+model Assignment {
+  id                   String  @id @default(cuid())
+  projectId            String
+  userId               String
+  costRateOverride     Int?
+  billableRateOverride Int?
+  project              Project @relation(fields: [projectId], references: [id])
+  user                 User    @relation(fields: [userId], references: [id])
+
+  @@unique([projectId, userId])
+}
+
+model TimeEntry {
+  id                   String    @id @default(cuid())
+  userId               String
+  taskId               String
+  date                 DateTime
+  hours                Float
+  note                 String?
+  status               String    @default("DRAFT") // DRAFT | SUBMITTED | APPROVED | REJECTED
+  costRateSnapshot     Int?
+  billableRateSnapshot Int?
+  rejectReason         String?
+  approvedById         String?
+  approvedAt           DateTime?
+  user                 User      @relation(fields: [userId], references: [id])
+  task                 Task      @relation(fields: [taskId], references: [id])
+  createdAt            DateTime  @default(now())
+
+  @@index([userId, date])
+  @@index([status, date])
+}
+
+model Expense {
+  id         String   @id @default(cuid())
+  projectId  String?
+  category   String
+  kind       String   @default("REGULAR") // REGULAR | IRREGULAR
+  amount     Int
+  date       DateTime
+  note       String?
+  loggedById String
+  project    Project? @relation(fields: [projectId], references: [id])
+  createdAt  DateTime @default(now())
+}
+
+model FixedCost {
+  id            String    @id @default(cuid())
+  name          String
+  category      String
+  monthlyAmount Int
+  effectiveFrom DateTime
+  effectiveTo   DateTime?
+  createdAt     DateTime  @default(now())
+}
+
+model InviteToken {
+  id        String    @id @default(cuid())
+  userId    String    @unique
+  selector  String    @unique
+  tokenHash String
+  expiresAt DateTime
+  usedAt    DateTime?
+  user      User      @relation(fields: [userId], references: [id])
+  createdAt DateTime  @default(now())
+}

@@ -1,0 +1,17 @@
+.git
+node_modules
+.next
+out
+prisma/dev.db
+prisma/dev.db-journal
+prisma/*.db
+*.log
+.env
+.env.*
+!.env.production.example
+.DS_Store
+.playwright-mcp
+playwright-report
+test-results
+coverage
+plans

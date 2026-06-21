@@ -1,0 +1,4 @@
+timesheet.9stack.vn {
+	encode gzip zstd
+	reverse_proxy app:3000
+}
