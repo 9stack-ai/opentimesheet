@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { formatISODate, resolvePeriod, type PeriodSearchParams } from "@/lib/period";
 import { nowSaigon } from "@/lib/clock";
 import { formatVnd } from "@/lib/money";
+import { paidToUserInPeriod } from "@/lib/disbursement-db";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PeriodNav } from "@/components/reports/period-nav";
@@ -13,6 +14,19 @@ import { RedmineSyncButton } from "./redmine-sync-button";
 import { UserPicker } from "./user-picker";
 
 export const dynamic = "force-dynamic";
+
+function pct(part: number, whole: number): string {
+  return whole > 0 ? `${((part / whole) * 100).toFixed(1)}%` : "0%";
+}
+
+function PayRow({ label, value, muted }: { label: string; value: number; muted?: boolean }) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-muted-foreground">{label}</span>
+      <span className={muted ? "text-muted-foreground" : "font-medium"}>{formatVnd(value)}</span>
+    </div>
+  );
+}
 
 export default async function TimesheetPage({
   searchParams,
@@ -74,7 +88,19 @@ export default async function TimesheetPage({
     (s, e) => s + (Number(e.hours) * (e.costRateSnapshot ?? 0) * (e.taxRateSnapshot ?? 0)) / 10000,
     0,
   );
-  const approvedPayout = Math.round(approvedGrossRaw) - Math.round(approvedTaxRaw);
+  const approvedEmployerRaw = approved.reduce(
+    (s, e) => s + (Number(e.hours) * (e.costRateSnapshot ?? 0) * (e.employerCostRateSnapshot ?? 0)) / 10000,
+    0,
+  );
+  // Round gross & tax separately (same decomposition as the manager payout report) so both screens
+  // show the identical net.
+  const approvedGross = Math.round(approvedGrossRaw);
+  const approvedTax = Math.round(approvedTaxRaw);
+  const approvedEmployer = Math.round(approvedEmployerRaw);
+  const approvedPayout = approvedGross - approvedTax; // thực nhận (net)
+  // Đã nhận = thực chi cho người này trong kỳ; còn chưa nhận = net − đã nhận (clamped ≥ 0).
+  const paidInPeriod = approvedGross > 0 ? await paidToUserInPeriod(targetUserId, period) : 0;
+  const remainingNet = Math.max(0, approvedPayout - paidInPeriod);
   const hasDraft = entries.some((e) => e.status === "DRAFT" || e.status === "REJECTED");
 
   // Serialise tasks to plain objects for client components.
@@ -123,6 +149,38 @@ export default async function TimesheetPage({
         <p className="-mt-3 text-sm text-muted-foreground">
           Đang chấm công hộ: <span className="font-medium text-foreground">{targetName}</span>
         </p>
+      ) : null}
+
+      {approvedGross > 0 ? (
+        <Card>
+          <CardContent className="flex flex-col gap-2 py-4 text-sm sm:max-w-md">
+            <div className="font-medium">Thu nhập đã duyệt — kỳ {period.label}</div>
+            <PayRow label="Lương gộp (trước thuế)" value={approvedGross} />
+            {approvedTax > 0 ? (
+              <PayRow label={`− Thuế TNCN công ty giữ lại (${pct(approvedTax, approvedGross)})`} value={approvedTax} />
+            ) : null}
+            <div className="mt-1 flex items-center justify-between border-t pt-2 font-semibold">
+              <span>Thực nhận (net)</span>
+              <span className="text-emerald-600">{formatVnd(approvedPayout)}</span>
+            </div>
+            <PayRow label="Đã nhận" value={paidInPeriod} muted />
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Còn chưa nhận</span>
+              <span className={`font-medium ${remainingNet > 0 ? "text-amber-600" : "text-emerald-600"}`}>
+                {formatVnd(remainingNet)}
+              </span>
+            </div>
+            {approvedEmployer > 0 ? (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Ngoài lương, công ty đóng BH cho bạn: {formatVnd(approvedEmployer)} (
+                {pct(approvedEmployer, approvedGross)}) — không trừ vào thực nhận.
+              </p>
+            ) : null}
+            <p className="text-xs text-muted-foreground">
+              Thuế giữ lại được nộp cho cơ quan thuế. &quot;Còn chưa nhận&quot; = thực nhận − đã nhận trong kỳ.
+            </p>
+          </CardContent>
+        </Card>
       ) : null}
 
       {tasks.length === 0 ? (

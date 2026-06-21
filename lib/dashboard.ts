@@ -7,6 +7,7 @@ export type FinancePoint = { label: string; revenue: number; cost: number; net: 
 export type HoursPoint = { label: string; hours: number };
 export type ManagerKpis = {
   income: number; // Nguồn thu
+  spent: number; // Đã chi ra = Thực chi cho người + Chi phí vận hành (tiền thật ra trong kỳ)
   actualNet: number; // Số dư thực tế (Nguồn thu − Thực chi − Chi phí)
   projectedNet: number; // Số dư dự kiến (sau tạm tính lương)
   unpaidPayroll: number; // Đang chờ chi = lương tạm tính − đã thực chi
@@ -54,6 +55,7 @@ export async function managerKpis(period: Period): Promise<ManagerKpis> {
   ]);
   return {
     income: f.income,
+    spent: f.disbursed + f.expenseTotal, // tiền thật ra: thực chi cho người + chi phí vận hành
     actualNet: f.actualNet,
     projectedNet: f.projectedNet,
     unpaidPayroll: f.unpaidPayroll,

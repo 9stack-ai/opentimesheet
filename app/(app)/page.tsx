@@ -50,8 +50,13 @@ async function ManagerCharts({ period }: { period: Period }) {
   const pq = `${ep.key}=${ep.value}`; // preserve the selected period when drilling in
   return (
     <>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <Kpi label={`Nguồn thu (${period.label})`} value={formatVnd(kpis.income)} href="/manager/income" />
+        <Kpi
+          label={`Đã chi ra (${period.label})`}
+          value={formatVnd(kpis.spent)}
+          href={`/manager/reports/finance?${pq}`}
+        />
         <Kpi
           label={`Số dư thực tế (${period.label})`}
           value={formatVnd(kpis.actualNet)}

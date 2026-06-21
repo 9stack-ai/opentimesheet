@@ -8,7 +8,9 @@ import type { Period } from "@/lib/period";
 //   • Thực chi (Disbursement ledger) → actual cash out to people
 //   • Tạm tính (approved timesheet)  → accrued payroll we still owe
 // "Thực tế" = cash basis (income − disbursed − operating expenses).
-// "Dự kiến" = accrual basis (income − full accrued payroll & insurance − operating expenses).
+// "Dự kiến" = "Thực tế" trừ tiếp phần lương CÒN NỢ người (chưa chi, clamped) và BH công ty (tạm tính).
+//   Vì xuất phát từ actualNet (đã trừ MỌI khoản đã chi, kể cả người không có timesheet),
+//   nó không bị "cao ảo" khi trả lương ngoài chấm công.
 export type FinanceOverview = {
   income: number; // Nguồn thu trong kỳ (theo ngày)
   disbursed: number; // Thực chi cho người trong kỳ (theo ngày)
@@ -20,7 +22,7 @@ export type FinanceOverview = {
   accruedPayout: number; // tạm tính: Σ lương gộp từ chấm công đã duyệt
   employerInsurance: number; // tạm tính: BH phần công ty
   unpaidPayroll: number; // Đang chờ chi = Σ theo người max(0, lương net timesheet − đã thực chi)
-  projectedNet: number; // Số dư dự kiến = income − accruedPayout − employerInsurance − expenseTotal
+  projectedNet: number; // Số dư dự kiến = actualNet − unpaidPayroll − employerInsurance
 };
 
 export async function financeOverview(period: Period): Promise<FinanceOverview> {
@@ -63,6 +65,7 @@ export async function financeOverview(period: Period): Promise<FinanceOverview> 
     else regularExpense += e.amount;
   }
   const expenseTotal = regularExpense + irregularExpense + fixedCost;
+  const actualNet = income - disbursed - expenseTotal;
 
   return {
     income,
@@ -71,10 +74,11 @@ export async function financeOverview(period: Period): Promise<FinanceOverview> 
     irregularExpense,
     fixedCost,
     expenseTotal,
-    actualNet: income - disbursed - expenseTotal,
+    actualNet,
     accruedPayout,
     employerInsurance,
     unpaidPayroll,
-    projectedNet: income - accruedPayout - employerInsurance - expenseTotal,
+    // Từ tiền mặt thực có, trừ tiếp phần còn nợ người (chưa chi) và BH công ty (tạm tính).
+    projectedNet: actualNet - unpaidPayroll - employerInsurance,
   };
 }

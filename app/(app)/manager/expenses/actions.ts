@@ -4,13 +4,22 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireManager } from "@/lib/rbac";
 import { expenseSchema } from "@/lib/validation";
+import { recordAudit } from "@/lib/audit";
+
+const vnd = (n: number) => `${n.toLocaleString("vi-VN")}đ`;
+
+function revalidate() {
+  revalidatePath("/manager/expenses");
+  revalidatePath("/manager/irregular-expenses");
+  revalidatePath("/manager/reports/finance");
+}
 
 export async function createExpense(formData: FormData) {
   const user = await requireManager();
   const parsed = expenseSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return;
   const d = parsed.data;
-  await prisma.expense.create({
+  const created = await prisma.expense.create({
     data: {
       projectId: d.projectId ?? null,
       category: d.category,
@@ -21,12 +30,15 @@ export async function createExpense(formData: FormData) {
       loggedById: user.id,
     },
   });
-  revalidatePath("/manager/expenses");
-  revalidatePath("/manager/irregular-expenses");
+  await recordAudit(user, "expense.create", `Thêm chi phí "${d.category}" ${vnd(d.amount)} (${d.kind})`, {
+    type: "Expense",
+    id: created.id,
+  });
+  revalidate();
 }
 
 export async function updateExpense(formData: FormData) {
-  await requireManager();
+  const user = await requireManager();
   const id = String(formData.get("id"));
   if (!id) return;
   const parsed = expenseSchema.safeParse(Object.fromEntries(formData));
@@ -43,15 +55,24 @@ export async function updateExpense(formData: FormData) {
       note: d.note ?? null,
     },
   });
-  revalidatePath("/manager/expenses");
-  revalidatePath("/manager/irregular-expenses");
+  await recordAudit(user, "expense.update", `Sửa chi phí "${d.category}" ${vnd(d.amount)} (${d.kind})`, {
+    type: "Expense",
+    id,
+  });
+  revalidate();
 }
 
 export async function deleteExpense(formData: FormData) {
-  await requireManager();
+  const user = await requireManager();
   const id = String(formData.get("id"));
   if (!id) return;
+  const rec = await prisma.expense.findUnique({ where: { id }, select: { category: true, amount: true } });
   await prisma.expense.deleteMany({ where: { id } }); // idempotent: no-op if already deleted (double-click safe)
-  revalidatePath("/manager/expenses");
-  revalidatePath("/manager/irregular-expenses");
+  if (rec) {
+    await recordAudit(user, "expense.delete", `Xoá chi phí "${rec.category}" ${vnd(rec.amount)}`, {
+      type: "Expense",
+      id,
+    });
+  }
+  revalidate();
 }

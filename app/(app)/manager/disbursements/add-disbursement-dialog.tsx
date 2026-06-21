@@ -59,6 +59,11 @@ export function AddDisbursementDialog({ users, today }: { users: UserOption[]; t
             <Input id="disb-date" name="date" type="date" defaultValue={today} required />
           </div>
           <div className="grid gap-2">
+            <Label htmlFor="disb-period">Kỳ lương (tuỳ chọn)</Label>
+            <Input id="disb-period" name="periodLabel" type="month" />
+            <p className="text-xs text-muted-foreground">Tháng lương khoản này tất toán. Bỏ trống = lấy theo tháng trả.</p>
+          </div>
+          <div className="grid gap-2">
             <Label htmlFor="disb-note">Ghi chú (tuỳ chọn)</Label>
             <Input id="disb-note" name="note" placeholder="VD: chuyển khoản đợt 1" />
           </div>

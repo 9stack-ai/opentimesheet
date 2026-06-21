@@ -98,25 +98,28 @@ export default async function FinanceOverviewPage({
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Tạm tính (từ chấm công)</CardTitle>
-            <CardDescription>Lương phải trả theo giờ đã duyệt — chưa hẳn đã chi.</CardDescription>
+            <CardTitle className="text-base">Dự kiến (sau tạm tính)</CardTitle>
+            <CardDescription>Từ số dư thực tế, trừ tiếp phần lương còn nợ và BH công ty.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-2 text-sm">
-            <Row label="Lương phải trả (gộp)" value={f.accruedPayout} />
-            <Row label="BH công ty (tạm tính)" value={f.employerInsurance} />
-            <Row label="Đã thực chi" value={f.disbursed} muted />
+            <Row label="Số dư thực tế" value={f.actualNet} muted />
             <div className="flex items-center justify-between border-b pb-2">
-              <span className="text-muted-foreground">Còn phải trả người</span>
+              <span className="text-muted-foreground">− Còn phải trả người (chưa chi)</span>
               <span className={`font-medium ${f.unpaidPayroll > 0 ? "text-amber-600" : "text-emerald-600"}`}>
                 {formatVnd(f.unpaidPayroll)}
               </span>
             </div>
+            <Row label="− BH công ty (tạm tính)" value={f.employerInsurance} />
             <div className="mt-1 flex items-center justify-between border-t pt-3 font-semibold">
               <span>Số dư dự kiến</span>
               <span className={f.projectedNet < 0 ? "text-rose-600" : "text-emerald-600"}>
                 {formatVnd(f.projectedNet)}
               </span>
             </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Lương gộp tạm tính từ chấm công đã duyệt: {formatVnd(f.accruedPayout)}. &quot;Còn phải
+              trả&quot; tính theo từng người: max(0, lương thực nhận − đã chi).
+            </p>
           </CardContent>
         </Card>
 

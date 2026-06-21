@@ -8,7 +8,7 @@ import { resolvePeriod, periodParam, type PeriodSearchParams } from "@/lib/perio
 import { payrollReconciliation, disbursementLedgerForPeriod } from "@/lib/disbursement-db";
 import { PeriodNav } from "@/components/reports/period-nav";
 import { AddDisbursementDialog } from "./add-disbursement-dialog";
-import { deleteDisbursement } from "./actions";
+import { DisbursementRowActions } from "./disbursement-row-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -146,12 +146,7 @@ export default async function DisbursementsPage({
                     <td className="px-3 py-2 text-right">{formatVnd(d.amount)}</td>
                     <td className="px-3 py-2 text-muted-foreground">{d.note ?? ""}</td>
                     <td className="px-3 py-2 text-right">
-                      <form action={deleteDisbursement}>
-                        <input type="hidden" name="id" value={d.id} />
-                        <button type="submit" className="cursor-pointer text-destructive hover:underline">
-                          Xoá
-                        </button>
-                      </form>
+                      <DisbursementRowActions disbursement={d} users={users} />
                     </td>
                   </tr>
                 ))

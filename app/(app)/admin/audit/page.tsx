@@ -27,7 +27,7 @@ export default async function AuditPage() {
       <div>
         <h1 className="text-2xl font-semibold">Nhật ký hoạt động</h1>
         <p className="text-muted-foreground">
-          Ai làm gì, khi nào — 500 hoạt động gần nhất (chấm công, duyệt, quản trị người dùng).
+          Ai làm gì, khi nào — 500 hoạt động gần nhất (chấm công, duyệt, quản trị người dùng, thu chi).
         </p>
       </div>
       <AuditTable data={rows} />

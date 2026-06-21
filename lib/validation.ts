@@ -97,11 +97,17 @@ const optionalDateString = z.preprocess(
   z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 );
 
+// Month "YYYY-MM" (e.g. kỳ lương). Blank → undefined.
+const optionalMonthString = z.preprocess(
+  (v) => (v === "" || v === undefined || v === null ? undefined : v),
+  z.string().regex(/^\d{4}-\d{2}$/).optional(),
+);
+
 export const expenseSchema = z.object({
   projectId: optionalString,
   category: z.string().min(1).max(100),
   kind: z.enum(["REGULAR", "IRREGULAR"]).default("REGULAR"),
-  amount: z.coerce.number().int().min(0),
+  amount: z.coerce.number().int().positive(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   note: z.string().max(500).optional(),
 });
@@ -110,24 +116,26 @@ export const expenseSchema = z.object({
 // Date is optional — undated income sits in the ledger but is excluded from a period's Tổng thu.
 export const incomeSchema = z.object({
   source: z.string().min(1).max(200),
-  amount: z.coerce.number().int().min(0),
+  amount: z.coerce.number().int().positive(),
   date: optionalDateString,
   note: z.string().max(500).optional(),
 });
 
-// Thực chi: an actual payment to a person. The salary month (periodLabel) is derived
-// from the payment date; reconciliation aggregates by date over the selected period.
+// Thực chi: an actual payment to a person. The salary month (periodLabel) is entered
+// explicitly (which month's pay this settles); blank → derived from the payment date.
+// Reconciliation aggregates by date over the selected period.
 export const disbursementSchema = z.object({
   userId: z.string().min(1),
-  amount: z.coerce.number().int().min(0),
+  amount: z.coerce.number().int().positive(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  periodLabel: optionalMonthString,
   note: z.string().max(500).optional(),
 });
 
 export const fixedCostSchema = z.object({
   name: z.string().min(1).max(120),
   category: z.string().min(1).max(100),
-  monthlyAmount: z.coerce.number().int().min(0),
+  monthlyAmount: z.coerce.number().int().positive(),
   effectiveFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   effectiveTo: optionalDateString,
 });

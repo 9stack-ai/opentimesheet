@@ -50,6 +50,7 @@ export type DisbursementRow = {
   id: string;
   date: string;
   periodLabel: string; // salary month settled ("YYYY-MM")
+  userId: string;
   userName: string;
   amount: number;
   note: string | null;
@@ -66,6 +67,7 @@ export async function disbursementLedgerForPeriod(period: Period): Promise<Disbu
     id: d.id,
     date: formatISODate(d.date),
     periodLabel: d.periodLabel,
+    userId: d.userId,
     userName: d.user.name,
     amount: d.amount,
     note: d.note,
