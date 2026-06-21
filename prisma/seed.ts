@@ -117,8 +117,34 @@ async function main() {
     },
   });
 
+  await prisma.expense.upsert({
+    where: { id: "seed-expense-office-supplies" },
+    update: {},
+    create: {
+      id: "seed-expense-office-supplies",
+      projectId: project.id,
+      category: "Văn phòng phẩm",
+      kind: "REGULAR",
+      amount: 1500000,
+      date: new Date("2026-06-05"),
+      loggedById: manager.id,
+    },
+  });
+  await prisma.expense.upsert({
+    where: { id: "seed-expense-equipment-repair" },
+    update: {},
+    create: {
+      id: "seed-expense-equipment-repair",
+      category: "Sửa thiết bị", // company-level, one-off
+      kind: "IRREGULAR",
+      amount: 5000000,
+      date: new Date("2026-06-12"),
+      loggedById: manager.id,
+    },
+  });
+
   console.log("Seed complete. Dev login password for all users:", DEV_PASSWORD);
-  console.log("Users:", [admin.email, manager.email, freelancerA.email, freelancerB.email]);
+  console.log("Users:", [admin.email, manager.email, employee.email, freelancerA.email, freelancerB.email]);
 }
 
 main()

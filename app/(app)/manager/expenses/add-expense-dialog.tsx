@@ -22,29 +22,33 @@ type Project = { id: string; clientName: string; name: string };
 export function AddExpenseDialog({
   projects,
   today,
+  kind = "REGULAR",
 }: {
   projects: Project[];
   today: string;
+  kind?: "REGULAR" | "IRREGULAR";
 }) {
   const [open, setOpen] = React.useState(false);
+  const label = kind === "IRREGULAR" ? "Thêm chi bất thường" : "Thêm chi phí";
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button>
           <PlusCircle className="size-4" />
-          Thêm chi phí
+          {label}
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Thêm chi phí</DialogTitle>
+          <DialogTitle>{label}</DialogTitle>
         </DialogHeader>
         <form
           action={createExpense}
           onSubmit={() => setOpen(false)}
           className="flex flex-col gap-4"
         >
+          <input type="hidden" name="kind" value={kind} />
           <div className="grid gap-2">
             <Label htmlFor="expense-category">Danh mục</Label>
             <Input id="expense-category" name="category" placeholder="Danh mục" required />

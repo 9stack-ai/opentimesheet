@@ -70,6 +70,7 @@ const optionalDateString = z.preprocess(
 export const expenseSchema = z.object({
   projectId: optionalString,
   category: z.string().min(1).max(100),
+  kind: z.enum(["REGULAR", "IRREGULAR"]).default("REGULAR"),
   amount: z.coerce.number().int().min(0),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   note: z.string().max(500).optional(),

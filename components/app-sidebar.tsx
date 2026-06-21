@@ -15,6 +15,7 @@ import {
   TrendingUp,
   Users,
   Wallet,
+  Zap,
 } from "lucide-react";
 import {
   Sidebar,
@@ -57,6 +58,7 @@ const REPORTS: Item[] = [
 ];
 const COSTS: Item[] = [
   { href: "/manager/expenses", label: "Chi phí", icon: CircleDollarSign },
+  { href: "/manager/irregular-expenses", label: "Chi bất thường", icon: Zap },
   { href: "/manager/fixed-costs", label: "Chi phí cố định", icon: Repeat },
 ];
 const ADMIN_ITEMS: Item[] = [{ href: "/admin/users", label: "Người dùng", icon: Users }];

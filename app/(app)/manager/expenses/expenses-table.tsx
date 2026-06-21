@@ -18,10 +18,12 @@ export function ExpensesTable({
   data,
   projects,
   today,
+  kind = "REGULAR",
 }: {
   data: ExpenseRow[];
   projects: Project[];
   today: string;
+  kind?: "REGULAR" | "IRREGULAR";
 }) {
   return (
     <DataTable
@@ -29,7 +31,7 @@ export function ExpensesTable({
       data={data}
       searchKey="category"
       searchPlaceholder="Tìm theo danh mục…"
-      toolbar={<AddExpenseDialog projects={projects} today={today} />}
+      toolbar={<AddExpenseDialog projects={projects} today={today} kind={kind} />}
     />
   );
 }

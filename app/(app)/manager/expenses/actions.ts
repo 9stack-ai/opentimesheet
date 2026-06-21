@@ -14,6 +14,7 @@ export async function createExpense(formData: FormData) {
     data: {
       projectId: d.projectId ?? null,
       category: d.category,
+      kind: d.kind,
       amount: d.amount,
       date: new Date(d.date),
       note: d.note ?? null,
@@ -21,6 +22,7 @@ export async function createExpense(formData: FormData) {
     },
   });
   revalidatePath("/manager/expenses");
+  revalidatePath("/manager/irregular-expenses");
 }
 
 export async function deleteExpense(formData: FormData) {
@@ -29,4 +31,5 @@ export async function deleteExpense(formData: FormData) {
   if (!id) return;
   await prisma.expense.delete({ where: { id } });
   revalidatePath("/manager/expenses");
+  revalidatePath("/manager/irregular-expenses");
 }
