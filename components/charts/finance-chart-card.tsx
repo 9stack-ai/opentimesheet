@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { Area, CartesianGrid, ComposedChart, Line, XAxis, YAxis } from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -36,8 +36,7 @@ const RANGES = [
 
 export function FinanceChartCard({ data }: { data: Point[] }) {
   const [range, setRange] = React.useState("6");
-  const n = Number(range);
-  const sliced = data.slice(Math.max(0, data.length - n));
+  const sliced = data.slice(Math.max(0, data.length - Number(range)));
 
   return (
     <Card>
@@ -61,7 +60,17 @@ export function FinanceChartCard({ data }: { data: Point[] }) {
       </CardHeader>
       <CardContent>
         <ChartContainer config={config} className="h-[300px] w-full">
-          <BarChart accessibilityLayer data={sliced} margin={{ left: 4, right: 8 }}>
+          <ComposedChart accessibilityLayer data={sliced} margin={{ left: 4, right: 8, top: 8 }}>
+            <defs>
+              <linearGradient id="fillRevenue" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="var(--color-revenue)" stopOpacity={0.4} />
+                <stop offset="95%" stopColor="var(--color-revenue)" stopOpacity={0.05} />
+              </linearGradient>
+              <linearGradient id="fillCost" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="var(--color-cost)" stopOpacity={0.35} />
+                <stop offset="95%" stopColor="var(--color-cost)" stopOpacity={0.05} />
+              </linearGradient>
+            </defs>
             <CartesianGrid vertical={false} strokeDasharray="3 3" />
             <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} />
             <YAxis
@@ -72,10 +81,28 @@ export function FinanceChartCard({ data }: { data: Point[] }) {
             />
             <ChartTooltip content={<ChartTooltipContent formatter={(value) => formatVnd(Number(value))} />} />
             <ChartLegend content={<ChartLegendContent />} />
-            <Bar dataKey="revenue" fill="var(--color-revenue)" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="cost" fill="var(--color-cost)" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="net" fill="var(--color-net)" radius={[4, 4, 0, 0]} />
-          </BarChart>
+            <Area
+              dataKey="revenue"
+              type="monotone"
+              fill="url(#fillRevenue)"
+              stroke="var(--color-revenue)"
+              strokeWidth={2}
+            />
+            <Area
+              dataKey="cost"
+              type="monotone"
+              fill="url(#fillCost)"
+              stroke="var(--color-cost)"
+              strokeWidth={2}
+            />
+            <Line
+              dataKey="net"
+              type="monotone"
+              stroke="var(--color-net)"
+              strokeWidth={2}
+              dot={{ r: 3 }}
+            />
+          </ComposedChart>
         </ChartContainer>
       </CardContent>
     </Card>
