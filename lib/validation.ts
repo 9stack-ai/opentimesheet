@@ -17,6 +17,17 @@ export const updateUserSchema = z.object({
   defaultBillableRate: z.coerce.number().int().min(0),
 });
 
+// Admin creates a user and sets the password directly (active immediately, no invite link).
+export const createUserSchema = inviteUserSchema.extend({
+  password: z.string().min(8).max(200),
+});
+
+// Admin resets an existing user's password.
+export const adminSetPasswordSchema = z.object({
+  id: z.string().min(1),
+  password: z.string().min(8).max(200),
+});
+
 export const setPasswordSchema = z.object({
   linkToken: z.string().min(1),
   password: z.string().min(8).max(200),

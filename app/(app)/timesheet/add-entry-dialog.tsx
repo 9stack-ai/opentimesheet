@@ -22,9 +22,12 @@ type Task = { id: string; label: string };
 export function AddEntryDialog({
   tasks,
   today,
+  targetUserId,
 }: {
   tasks: Task[];
   today: string;
+  // Set (ADMIN only) when logging on behalf of another user.
+  targetUserId?: string;
 }) {
   const [open, setOpen] = React.useState(false);
 
@@ -45,6 +48,7 @@ export function AddEntryDialog({
           onSubmit={() => setOpen(false)}
           className="flex flex-col gap-4"
         >
+          {targetUserId ? <input type="hidden" name="targetUserId" value={targetUserId} /> : null}
           <div className="grid gap-2">
             <Label>Công việc</Label>
             <select name="taskId" required className={selectClass} aria-label="Công việc">

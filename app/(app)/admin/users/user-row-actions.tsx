@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useActionState } from "react";
 import { MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,7 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ROLES } from "@/lib/roles";
 import { roleLabel } from "@/lib/labels";
-import { updateUser, setUserStatus } from "./actions";
+import { updateUser, setUserStatus, adminSetPassword, type SetPasswordResult } from "./actions";
 import type { UserRow } from "./types";
 
 const selectClass =
@@ -29,6 +30,11 @@ const selectClass =
 
 export function UserRowActions({ user }: { user: UserRow }) {
   const [editOpen, setEditOpen] = React.useState(false);
+  const [passwordOpen, setPasswordOpen] = React.useState(false);
+  const [pwState, pwAction, pwPending] = useActionState<SetPasswordResult | undefined, FormData>(
+    adminSetPassword,
+    undefined,
+  );
   const disabled = user.status === "DISABLED";
 
   return (
@@ -48,6 +54,14 @@ export function UserRowActions({ user }: { user: UserRow }) {
             }}
           >
             Sửa
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={(e) => {
+              e.preventDefault();
+              setPasswordOpen(true);
+            }}
+          >
+            Đặt lại mật khẩu
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <form action={setUserStatus} className="w-full">
@@ -99,6 +113,43 @@ export function UserRowActions({ user }: { user: UserRow }) {
                 </Button>
               </DialogClose>
               <Button type="submit">Lưu</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={passwordOpen} onOpenChange={setPasswordOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Đặt lại mật khẩu — {user.name}</DialogTitle>
+          </DialogHeader>
+          <form action={pwAction} className="flex flex-col gap-4">
+            <input type="hidden" name="id" value={user.id} />
+            <div className="grid gap-2">
+              <Label htmlFor={`password-${user.id}`}>Mật khẩu mới</Label>
+              <Input
+                id={`password-${user.id}`}
+                name="password"
+                type="password"
+                minLength={8}
+                placeholder="Tối thiểu 8 ký tự"
+                required
+              />
+            </div>
+            {pwState ? (
+              <p className={`text-sm ${pwState.ok ? "text-emerald-700" : "text-destructive"}`}>
+                {pwState.message}
+              </p>
+            ) : null}
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="outline">
+                  Đóng
+                </Button>
+              </DialogClose>
+              <Button type="submit" disabled={pwPending}>
+                {pwPending ? "Đang lưu…" : "Lưu mật khẩu"}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

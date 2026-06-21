@@ -8,7 +8,12 @@ import type { EntryRow } from "./entries-table";
 
 type Task = { id: string; label: string };
 
-export function buildEntryColumns(tasks: Task[]): ColumnDef<EntryRow>[] {
+type RowActionOptions = { targetUserId?: string; canEditAll?: boolean };
+
+export function buildEntryColumns(
+  tasks: Task[],
+  opts: RowActionOptions = {},
+): ColumnDef<EntryRow>[] {
   return [
     {
       accessorKey: "date",
@@ -54,7 +59,14 @@ export function buildEntryColumns(tasks: Task[]): ColumnDef<EntryRow>[] {
     },
     {
       id: "actions",
-      cell: ({ row }) => <EntryRowActions entry={row.original} tasks={tasks} />,
+      cell: ({ row }) => (
+        <EntryRowActions
+          entry={row.original}
+          tasks={tasks}
+          targetUserId={opts.targetUserId}
+          canEditAll={opts.canEditAll}
+        />
+      ),
     },
   ];
 }

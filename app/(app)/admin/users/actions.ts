@@ -3,12 +3,78 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireRole } from "@/lib/rbac";
-import { inviteUserSchema, updateUserSchema } from "@/lib/validation";
+import {
+  inviteUserSchema,
+  updateUserSchema,
+  createUserSchema,
+  adminSetPasswordSchema,
+} from "@/lib/validation";
 import { createInviteToken, hashVerifier } from "@/lib/auth-tokens";
+import { hashPassword } from "@/lib/password";
 
 const INVITE_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 
 export type InviteResult = { ok: boolean; message: string; inviteLink?: string };
+
+/** Admin creates a user with a password set directly — active immediately, no invite-link round-trip. */
+export async function createUserWithPassword(
+  _prev: InviteResult | undefined,
+  formData: FormData,
+): Promise<InviteResult> {
+  await requireRole(["ADMIN"]);
+
+  const parsed = createUserSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { ok: false, message: "Dữ liệu không hợp lệ (mật khẩu tối thiểu 8 ký tự)." };
+  const data = parsed.data;
+
+  const existing = await prisma.user.findUnique({ where: { email: data.email } });
+  if (existing) return { ok: false, message: "Email này đã tồn tại." };
+
+  const passwordHash = await hashPassword(data.password);
+  await prisma.user.create({
+    data: {
+      name: data.name,
+      email: data.email,
+      role: data.role,
+      status: "ACTIVE",
+      defaultCostRate: data.defaultCostRate,
+      defaultBillableRate: data.defaultBillableRate,
+      passwordHash,
+    },
+  });
+
+  revalidatePath("/admin/users");
+  return { ok: true, message: `Đã tạo tài khoản ${data.email}.` };
+}
+
+export type SetPasswordResult = { ok: boolean; message: string };
+
+/** Admin resets a user's password. Activates an INVITED user and kills any stale invite link. */
+export async function adminSetPassword(
+  _prev: SetPasswordResult | undefined,
+  formData: FormData,
+): Promise<SetPasswordResult> {
+  await requireRole(["ADMIN"]);
+  const parsed = adminSetPasswordSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { ok: false, message: "Mật khẩu phải có ít nhất 8 ký tự." };
+  const { id, password } = parsed.data;
+
+  const user = await prisma.user.findUnique({ where: { id }, select: { status: true } });
+  if (!user) return { ok: false, message: "Không tìm thấy người dùng." };
+
+  const passwordHash = await hashPassword(password);
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id },
+      // Promote a pending invitee to ACTIVE; never override a DISABLED account.
+      data: { passwordHash, ...(user.status === "INVITED" ? { status: "ACTIVE" } : {}) },
+    }),
+    // Invalidate any outstanding invite link now that a password exists.
+    prisma.inviteToken.deleteMany({ where: { userId: id } }),
+  ]);
+  revalidatePath("/admin/users");
+  return { ok: true, message: "Đã đặt lại mật khẩu." };
+}
 
 export async function inviteUser(_prev: InviteResult | undefined, formData: FormData): Promise<InviteResult> {
   await requireRole(["ADMIN"]);

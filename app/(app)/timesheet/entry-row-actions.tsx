@@ -30,12 +30,21 @@ type Task = { id: string; label: string };
 export function EntryRowActions({
   entry,
   tasks,
+  targetUserId,
+  canEditAll = false,
 }: {
   entry: EntryRow;
   tasks: Task[];
+  // Set (ADMIN only) when acting on behalf of another user.
+  targetUserId?: string;
+  // ADMIN may edit/delete entries in any status.
+  canEditAll?: boolean;
 }) {
   const [editOpen, setEditOpen] = React.useState(false);
-  const canEdit = entry.status === "DRAFT" || entry.status === "REJECTED";
+  // An entry already pushed to Redmine is locked to avoid diverging from its Redmine time entry.
+  const lockedByRedmine = entry.redminePushStatus === "pushed";
+  const canEdit =
+    (canEditAll || entry.status === "DRAFT" || entry.status === "REJECTED") && !lockedByRedmine;
 
   if (!canEdit) return null;
 
@@ -60,6 +69,7 @@ export function EntryRowActions({
           <DropdownMenuItem asChild>
             <form action={deleteEntry} className="w-full">
               <input type="hidden" name="id" value={entry.id} />
+              {targetUserId ? <input type="hidden" name="targetUserId" value={targetUserId} /> : null}
               <button type="submit" className="w-full cursor-pointer text-left text-destructive">
                 Xoá
               </button>
@@ -79,6 +89,7 @@ export function EntryRowActions({
             className="flex flex-col gap-4"
           >
             <input type="hidden" name="id" value={entry.id} />
+            {targetUserId ? <input type="hidden" name="targetUserId" value={targetUserId} /> : null}
             <div className="grid gap-2">
               <Label>Công việc</Label>
               <select

@@ -17,16 +17,37 @@ import { submitPeriod } from "./actions";
 import { EntriesTable } from "./entries-table";
 import type { EntryRow } from "./entries-table";
 import { RedmineSyncButton } from "./redmine-sync-button";
+import { UserPicker } from "./user-picker";
 
 export const dynamic = "force-dynamic";
 
 export default async function TimesheetPage({
   searchParams,
 }: {
-  searchParams: Promise<{ month?: string; week?: string }>;
+  searchParams: Promise<{ month?: string; week?: string; userId?: string }>;
 }) {
-  const user = await requireUser();
+  const sessionUser = await requireUser();
+  const isAdmin = sessionUser.role === "ADMIN";
   const sp = await searchParams;
+
+  // ADMIN may view/edit another user's timesheet via ?userId=. The target is validated against the
+  // user list so a bad id falls back to self; non-admins are always pinned to themselves.
+  const userOptions = isAdmin
+    ? await prisma.user.findMany({
+        where: { status: { not: "DISABLED" } },
+        select: { id: true, name: true, role: true },
+        orderBy: { name: "asc" },
+      })
+    : [];
+  const requestedUserId = isAdmin ? sp.userId : undefined;
+  const targetUserId =
+    requestedUserId && userOptions.some((u) => u.id === requestedUserId)
+      ? requestedUserId
+      : sessionUser.id;
+  const viewingOther = targetUserId !== sessionUser.id;
+  const targetName = viewingOther
+    ? userOptions.find((u) => u.id === targetUserId)?.name ?? ""
+    : "";
 
   const saigonNow = nowSaigon();
   const curYear = saigonNow.getUTCFullYear();
@@ -42,7 +63,7 @@ export default async function TimesheetPage({
   const currentWeekLabel = weekPeriod(saigonNow).label;
 
   const assignments = await prisma.assignment.findMany({
-    where: { userId: user.id },
+    where: { userId: targetUserId },
     select: { projectId: true },
   });
   const projectIds = assignments.map((a) => a.projectId);
@@ -55,7 +76,7 @@ export default async function TimesheetPage({
     : [];
 
   const entries = await prisma.timeEntry.findMany({
-    where: { userId: user.id, date: { gte: period.start, lt: period.end } },
+    where: { userId: targetUserId, date: { gte: period.start, lt: period.end } },
     include: { task: { include: { project: true } } },
     orderBy: [{ date: "asc" }, { createdAt: "asc" }],
   });
@@ -97,7 +118,8 @@ export default async function TimesheetPage({
         <Button variant="outline" size="sm" asChild>
           <Link href={`/timesheet?week=${currentWeekLabel}`}>Tuần này</Link>
         </Button>
-        <RedmineSyncButton />
+        {isAdmin ? <UserPicker users={userOptions} value={targetUserId} /> : null}
+        {!viewingOther ? <RedmineSyncButton /> : null}
         <div className="ml-auto flex items-center gap-4 text-sm">
           <span>
             Tổng: <span className="font-semibold">{totalHours} giờ</span>
@@ -110,20 +132,35 @@ export default async function TimesheetPage({
         </div>
       </div>
 
+      {viewingOther ? (
+        <p className="-mt-3 text-sm text-muted-foreground">
+          Đang chấm công hộ: <span className="font-medium text-foreground">{targetName}</span>
+        </p>
+      ) : null}
+
       {tasks.length === 0 ? (
         <Card>
           <CardContent className="py-6 text-muted-foreground">
-            Bạn chưa được phân vào dự án nào.
+            {viewingOther
+              ? "Người dùng này chưa được phân vào dự án nào."
+              : "Bạn chưa được phân vào dự án nào."}
           </CardContent>
         </Card>
       ) : (
-        <EntriesTable data={rows} tasks={taskOptions} today={todayStr} />
+        <EntriesTable
+          data={rows}
+          tasks={taskOptions}
+          today={todayStr}
+          targetUserId={isAdmin ? targetUserId : undefined}
+          canEditAll={isAdmin}
+        />
       )}
 
       {hasDraft ? (
         <form action={submitPeriod} className="flex items-center gap-3">
           <input type="hidden" name="start" value={period.start.toISOString()} />
           <input type="hidden" name="end" value={period.end.toISOString()} />
+          {isAdmin ? <input type="hidden" name="targetUserId" value={targetUserId} /> : null}
           <Button type="submit">Gửi duyệt kỳ {period.label}</Button>
           <span className="text-xs text-muted-foreground">Sẽ khoá tất cả dòng nháp trong kỳ.</span>
         </form>
