@@ -14,14 +14,14 @@ import { managerKpis, managerMonthlyFinance, freelancerMonthlyHours } from "@/li
 
 export const dynamic = "force-dynamic";
 
-function Kpi({ label, value }: { label: string; value: string }) {
+function Kpi({ label, value, tone }: { label: string; value: string; tone?: string }) {
   return (
     <Card>
       <CardHeader className="pb-1">
         <CardDescription>{label}</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-semibold">{value}</div>
+        <div className={`text-2xl font-semibold ${tone ?? ""}`}>{value}</div>
       </CardContent>
     </Card>
   );
@@ -31,10 +31,15 @@ async function ManagerCharts({ period }: { period: Period }) {
   const [kpis, finance] = await Promise.all([managerKpis(period), managerMonthlyFinance(12)]);
   return (
     <>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <Kpi label={`Nguồn thu (${period.label})`} value={formatVnd(kpis.income)} />
         <Kpi label={`Số dư thực tế (${period.label})`} value={formatVnd(kpis.actualNet)} />
         <Kpi label={`Số dư dự kiến (${period.label})`} value={formatVnd(kpis.projectedNet)} />
+        <Kpi
+          label={`Đang chờ chi (${period.label})`}
+          value={formatVnd(kpis.unpaidPayroll)}
+          tone={kpis.unpaidPayroll > 0 ? "text-amber-600" : "text-emerald-600"}
+        />
         <Kpi label="Dự án đang chạy" value={String(kpis.activeProjects)} />
       </div>
       <FinanceChartCard data={finance} />

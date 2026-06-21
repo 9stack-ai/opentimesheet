@@ -9,6 +9,7 @@ export type ManagerKpis = {
   income: number; // Nguồn thu
   actualNet: number; // Số dư thực tế (Nguồn thu − Thực chi − Chi phí)
   projectedNet: number; // Số dư dự kiến (sau tạm tính lương)
+  unpaidPayroll: number; // Đang chờ chi = lương tạm tính − đã thực chi
   activeProjects: number;
 };
 
@@ -55,6 +56,7 @@ export async function managerKpis(period: Period): Promise<ManagerKpis> {
     income: f.income,
     actualNet: f.actualNet,
     projectedNet: f.projectedNet,
+    unpaidPayroll: f.unpaidPayroll,
     activeProjects,
   };
 }
