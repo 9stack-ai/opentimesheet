@@ -12,6 +12,7 @@ import {
   LogOut,
   Receipt,
   Repeat,
+  Scale,
   TrendingUp,
   Users,
   Wallet,
@@ -52,6 +53,7 @@ const MANAGE: Item[] = [
   { href: "/manager/approvals", label: "Duyệt công", icon: CheckSquare },
 ];
 const REPORTS: Item[] = [
+  { href: "/manager/reports/finance", label: "Tổng quan thu chi", icon: Scale },
   { href: "/manager/reports/payout", label: "Chi trả CTV", icon: Wallet },
   { href: "/manager/reports/billing", label: "Doanh thu KH", icon: Receipt },
   { href: "/manager/reports/profitability", label: "Lợi nhuận", icon: TrendingUp },
