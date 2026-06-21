@@ -15,7 +15,7 @@ export async function createDisbursement(formData: FormData) {
       userId: d.userId,
       amount: d.amount,
       date: new Date(d.date),
-      periodLabel: d.periodLabel,
+      periodLabel: d.date.slice(0, 7), // salary month "YYYY-MM" from the payment date
       note: d.note ?? null,
       loggedById: user.id,
     },

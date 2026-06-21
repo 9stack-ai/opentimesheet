@@ -106,12 +106,12 @@ export const incomeSchema = z.object({
   note: z.string().max(500).optional(),
 });
 
-// Thực chi: an actual payment to a person, settling a given salary month (periodLabel "YYYY-MM").
+// Thực chi: an actual payment to a person. The salary month (periodLabel) is derived
+// from the payment date; reconciliation aggregates by date over the selected period.
 export const disbursementSchema = z.object({
   userId: z.string().min(1),
   amount: z.coerce.number().int().min(0),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  periodLabel: z.string().regex(/^\d{4}-\d{2}$/),
   note: z.string().max(500).optional(),
 });
 

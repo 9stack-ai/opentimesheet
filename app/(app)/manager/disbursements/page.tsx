@@ -1,14 +1,12 @@
 import Link from "next/link";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { requireManager } from "@/lib/rbac";
 import { prisma } from "@/lib/db";
 import { formatVnd } from "@/lib/money";
 import { roleLabel } from "@/lib/labels";
 import { nowSaigon } from "@/lib/clock";
-import { monthPeriodFromString, monthPeriodOf, shiftPeriod } from "@/lib/period";
-import { payrollReconciliation, disbursementLedgerForMonth } from "@/lib/disbursement-db";
-import { Button } from "@/components/ui/button";
-import { MonthNav } from "./month-nav";
+import { resolvePeriod, periodParam, type PeriodSearchParams } from "@/lib/period";
+import { payrollReconciliation, disbursementLedgerForPeriod } from "@/lib/disbursement-db";
+import { PeriodNav } from "@/components/reports/period-nav";
 import { AddDisbursementDialog } from "./add-disbursement-dialog";
 import { deleteDisbursement } from "./actions";
 
@@ -17,17 +15,17 @@ export const dynamic = "force-dynamic";
 export default async function DisbursementsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ month?: string }>;
+  searchParams: Promise<PeriodSearchParams>;
 }) {
   await requireManager();
   const sp = await searchParams;
   const now = nowSaigon();
-  const period = (sp.month ? monthPeriodFromString(sp.month) : null) ?? monthPeriodOf(now);
-  const monthLabel = period.label;
+  const period = resolvePeriod(sp, now);
+  const ep = periodParam(period);
 
   const [rows, ledger, users] = await Promise.all([
-    payrollReconciliation(monthLabel),
-    disbursementLedgerForMonth(monthLabel),
+    payrollReconciliation(period),
+    disbursementLedgerForPeriod(period),
     prisma.user.findMany({
       where: { status: "ACTIVE" },
       orderBy: { name: "asc" },
@@ -36,8 +34,6 @@ export default async function DisbursementsPage({
   ]);
 
   const today = now.toISOString().slice(0, 10);
-  const prev = shiftPeriod(period, -1).label;
-  const next = shiftPeriod(period, 1).label;
   const totals = rows.reduce(
     (s, r) => ({ owed: s.owed + r.owed, paid: s.paid + r.paid, remaining: s.remaining + r.remaining }),
     { owed: 0, paid: 0, remaining: 0 },
@@ -49,27 +45,14 @@ export default async function DisbursementsPage({
         <h1 className="text-2xl font-semibold">Thực chi</h1>
         <p className="text-sm text-muted-foreground">
           Tiền thực trả cho CTV/nhân viên, đối soát với lương ghi nhận từ chấm công (đã duyệt) theo
-          từng kỳ lương.
+          kỳ. Cả hai vế lọc theo ngày trong kỳ đang chọn.
         </p>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex items-center gap-1">
-          <Button variant="outline" size="icon" className="size-8" asChild>
-            <Link href={`/manager/disbursements?month=${prev}`} aria-label="Kỳ trước">
-              <ChevronLeft className="size-4" />
-            </Link>
-          </Button>
-          <span className="min-w-20 text-center text-sm font-medium">{monthLabel}</span>
-          <Button variant="outline" size="icon" className="size-8" asChild>
-            <Link href={`/manager/disbursements?month=${next}`} aria-label="Kỳ sau">
-              <ChevronRight className="size-4" />
-            </Link>
-          </Button>
-        </div>
-        <MonthNav value={monthLabel} />
+        <PeriodNav basePath="/manager/disbursements" period={period} now={now} />
         <div className="ml-auto">
-          <AddDisbursementDialog users={users} monthLabel={monthLabel} today={today} />
+          <AddDisbursementDialog users={users} today={today} />
         </div>
       </div>
 
@@ -89,7 +72,7 @@ export default async function DisbursementsPage({
             {rows.length === 0 ? (
               <tr>
                 <td colSpan={5} className="px-3 py-6 text-center text-muted-foreground">
-                  Chưa có lương ghi nhận hay khoản chi nào cho kỳ {monthLabel}.
+                  Chưa có lương ghi nhận hay khoản chi nào trong kỳ {period.label}.
                 </td>
               </tr>
             ) : (
@@ -97,7 +80,7 @@ export default async function DisbursementsPage({
                 <tr key={r.userId} className="border-t">
                   <td className="px-3 py-2 font-medium">
                     <Link
-                      href={`/manager/reports/payout/${r.userId}?month=${monthLabel}`}
+                      href={`/manager/reports/payout/${r.userId}?${ep.key}=${ep.value}`}
                       className="hover:underline"
                     >
                       {r.userName}
@@ -132,7 +115,7 @@ export default async function DisbursementsPage({
         </table>
       </div>
 
-      {/* Ledger of actual payments for the month */}
+      {/* Ledger of actual payments in the period */}
       <div>
         <h2 className="mb-2 text-sm font-medium text-muted-foreground">Các khoản đã chi trong kỳ</h2>
         <div className="overflow-x-auto rounded-md border">
@@ -141,6 +124,7 @@ export default async function DisbursementsPage({
               <tr>
                 <th className="px-3 py-2 text-left font-medium">Ngày</th>
                 <th className="px-3 py-2 text-left font-medium">Người nhận</th>
+                <th className="px-3 py-2 text-left font-medium">Kỳ lương</th>
                 <th className="px-3 py-2 text-right font-medium">Số tiền</th>
                 <th className="px-3 py-2 text-left font-medium">Ghi chú</th>
                 <th className="px-3 py-2" />
@@ -149,7 +133,7 @@ export default async function DisbursementsPage({
             <tbody>
               {ledger.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-3 py-6 text-center text-muted-foreground">
+                  <td colSpan={6} className="px-3 py-6 text-center text-muted-foreground">
                     Chưa ghi khoản chi nào.
                   </td>
                 </tr>
@@ -158,6 +142,7 @@ export default async function DisbursementsPage({
                   <tr key={d.id} className="border-t">
                     <td className="px-3 py-2">{d.date}</td>
                     <td className="px-3 py-2">{d.userName}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{d.periodLabel}</td>
                     <td className="px-3 py-2 text-right">{formatVnd(d.amount)}</td>
                     <td className="px-3 py-2 text-muted-foreground">{d.note ?? ""}</td>
                     <td className="px-3 py-2 text-right">

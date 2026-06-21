@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { monthPeriodFromString, formatISODate, type Period } from "@/lib/period";
+import { formatISODate, type Period } from "@/lib/period";
 import { approvedEntriesForPeriod } from "@/lib/reporting-db";
 import { payoutByUser } from "@/lib/reporting";
 
@@ -7,21 +7,19 @@ export type PayrollRow = {
   userId: string;
   userName: string;
   role: string;
-  owed: number; // net (thực nhận) accrued from approved timesheet for the month
-  paid: number; // Σ actual disbursements settling this month
+  owed: number; // net (thực nhận) accrued from approved timesheet in the period
+  paid: number; // Σ actual disbursements in the period (by payment date)
   remaining: number; // owed − paid
 };
 
-/** Reconcile accrued net pay (from approved timesheet) against actual disbursements
- *  for a salary month ("YYYY-MM"). Includes anyone owed OR paid for that month. */
-export async function payrollReconciliation(monthLabel: string): Promise<PayrollRow[]> {
-  const period = monthPeriodFromString(monthLabel);
-  if (!period) return [];
+/** Reconcile accrued net pay (from approved timesheet) against actual disbursements over
+ *  a period (any kind). Both sides filter by date in [start, end). Includes anyone owed OR paid. */
+export async function payrollReconciliation(period: Period): Promise<PayrollRow[]> {
   const [entries, paidAgg, users] = await Promise.all([
     approvedEntriesForPeriod(period),
     prisma.disbursement.groupBy({
       by: ["userId"],
-      where: { periodLabel: monthLabel },
+      where: { date: { gte: period.start, lt: period.end } },
       _sum: { amount: true },
     }),
     prisma.user.findMany({ select: { id: true, name: true, role: true } }),
@@ -51,21 +49,23 @@ export async function payrollReconciliation(monthLabel: string): Promise<Payroll
 export type DisbursementRow = {
   id: string;
   date: string;
+  periodLabel: string; // salary month settled ("YYYY-MM")
   userName: string;
   amount: number;
   note: string | null;
 };
 
-/** Actual-payment ledger for a salary month. */
-export async function disbursementLedgerForMonth(monthLabel: string): Promise<DisbursementRow[]> {
+/** Actual-payment ledger over a period (by payment date). */
+export async function disbursementLedgerForPeriod(period: Period): Promise<DisbursementRow[]> {
   const rows = await prisma.disbursement.findMany({
-    where: { periodLabel: monthLabel },
+    where: { date: { gte: period.start, lt: period.end } },
     orderBy: { date: "desc" },
     include: { user: { select: { name: true } } },
   });
   return rows.map((d) => ({
     id: d.id,
     date: formatISODate(d.date),
+    periodLabel: d.periodLabel,
     userName: d.user.name,
     amount: d.amount,
     note: d.note,

@@ -21,15 +21,7 @@ const selectClass =
 
 type UserOption = { id: string; name: string; role: string };
 
-export function AddDisbursementDialog({
-  users,
-  monthLabel,
-  today,
-}: {
-  users: UserOption[];
-  monthLabel: string;
-  today: string;
-}) {
+export function AddDisbursementDialog({ users, today }: { users: UserOption[]; today: string }) {
   const [open, setOpen] = React.useState(false);
 
   return (
@@ -42,10 +34,9 @@ export function AddDisbursementDialog({
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Ghi thực chi — kỳ {monthLabel}</DialogTitle>
+          <DialogTitle>Ghi thực chi</DialogTitle>
         </DialogHeader>
         <form action={createDisbursement} onSubmit={() => setOpen(false)} className="flex flex-col gap-4">
-          <input type="hidden" name="periodLabel" value={monthLabel} />
           <div className="grid gap-2">
             <Label htmlFor="disb-user">Người nhận</Label>
             <select id="disb-user" name="userId" required defaultValue="" className={selectClass}>
