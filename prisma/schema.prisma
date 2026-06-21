@@ -133,6 +133,16 @@ model Expense {
   createdAt  DateTime @default(now())
 }
 
+model Income {
+  id         String    @id @default(cuid())
+  source     String // tên nguồn thu (góp vốn, tạm ứng, doanh thu…)
+  amount     Int // VND
+  date       DateTime? // null = chưa gán kỳ (nhập sau)
+  note       String?
+  loggedById String
+  createdAt  DateTime  @default(now())
+}
+
 model FixedCost {
   id            String    @id @default(cuid())
   name          String

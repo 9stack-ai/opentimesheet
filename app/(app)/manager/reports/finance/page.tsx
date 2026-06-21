@@ -61,7 +61,7 @@ export default async function FinanceOverviewPage({
             <CardDescription>Tổng thu</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-semibold text-emerald-600">{formatVnd(f.revenue)}</div>
+            <div className="text-2xl font-semibold text-emerald-600">{formatVnd(f.incomeTotal)}</div>
           </CardContent>
         </Card>
         <Card>
@@ -85,6 +85,26 @@ export default async function FinanceOverviewPage({
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Cơ cấu thu</CardTitle>
+            <CardDescription>Phân loại các khoản thu trong kỳ.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-2 text-sm">
+            <div className="flex items-center justify-between border-b pb-2">
+              <span className="text-muted-foreground">Doanh thu billable</span>
+              <span className="font-medium">{formatVnd(f.revenue)}</span>
+            </div>
+            <div className="flex items-center justify-between border-b pb-2">
+              <span className="text-muted-foreground">Nguồn thu khác</span>
+              <span className="font-medium">{formatVnd(f.otherIncome)}</span>
+            </div>
+            <div className="mt-1 flex items-center justify-between border-t pt-3 font-semibold">
+              <span>Tổng thu</span>
+              <span>{formatVnd(f.incomeTotal)}</span>
+            </div>
+          </CardContent>
+        </Card>
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Cơ cấu chi</CardTitle>

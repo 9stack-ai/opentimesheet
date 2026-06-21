@@ -97,6 +97,15 @@ export const expenseSchema = z.object({
   note: z.string().max(500).optional(),
 });
 
+// Nguồn thu (income/cash-in): capital contributions, client advances, milestone revenue.
+// Date is optional — undated income sits in the ledger but is excluded from a period's Tổng thu.
+export const incomeSchema = z.object({
+  source: z.string().min(1).max(200),
+  amount: z.coerce.number().int().min(0),
+  date: optionalDateString,
+  note: z.string().max(500).optional(),
+});
+
 export const fixedCostSchema = z.object({
   name: z.string().min(1).max(120),
   category: z.string().min(1).max(100),

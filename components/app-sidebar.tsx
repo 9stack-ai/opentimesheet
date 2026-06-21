@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Banknote,
   Building2,
   CheckSquare,
   ChevronsUpDown,
@@ -53,6 +54,7 @@ const BASE: Item[] = [
 const MANAGE: Item[] = [
   { href: "/manager/clients", label: "Khách hàng", icon: Building2 },
   { href: "/manager/approvals", label: "Duyệt công", icon: CheckSquare },
+  { href: "/manager/income", label: "Nguồn thu", icon: Banknote },
 ];
 const REPORTS: Item[] = [
   { href: "/manager/reports/finance", label: "Tổng quan thu chi", icon: Scale },
