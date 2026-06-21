@@ -23,8 +23,15 @@ import { SubmitButton } from "@/components/ui/submit-button";
 import { updateFixedCost, deleteFixedCost } from "./actions";
 import type { FixedCostRow } from "./fixed-costs-table";
 
-export function FixedCostRowActions({ fixedCost }: { fixedCost: FixedCostRow }) {
+export function FixedCostRowActions({
+  fixedCost,
+  categories,
+}: {
+  fixedCost: FixedCostRow;
+  categories: string[];
+}) {
   const [editOpen, setEditOpen] = React.useState(false);
+  const listId = `fc-cats-${fixedCost.id}`;
 
   return (
     <div className="flex justify-end">
@@ -68,7 +75,18 @@ export function FixedCostRowActions({ fixedCost }: { fixedCost: FixedCostRow }) 
             </div>
             <div className="grid gap-2">
               <Label htmlFor={`fc-cat-${fixedCost.id}`}>Danh mục</Label>
-              <Input id={`fc-cat-${fixedCost.id}`} name="category" defaultValue={fixedCost.category} required />
+              <Input
+                id={`fc-cat-${fixedCost.id}`}
+                name="category"
+                list={listId}
+                defaultValue={fixedCost.category}
+                required
+              />
+              <datalist id={listId}>
+                {categories.map((c) => (
+                  <option key={c} value={c} />
+                ))}
+              </datalist>
             </div>
             <div className="grid gap-2">
               <Label htmlFor={`fc-amt-${fixedCost.id}`}>Hàng tháng (VND)</Label>
@@ -76,7 +94,7 @@ export function FixedCostRowActions({ fixedCost }: { fixedCost: FixedCostRow }) 
                 id={`fc-amt-${fixedCost.id}`}
                 name="monthlyAmount"
                 type="number"
-                min={0}
+                min={1}
                 defaultValue={fixedCost.monthlyAmount}
                 required
               />

@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { createFixedCost } from "./actions";
 
-export function AddFixedCostDialog() {
+export function AddFixedCostDialog({ categories = [] }: { categories?: string[] }) {
   const [open, setOpen] = React.useState(false);
 
   return (
@@ -41,7 +41,12 @@ export function AddFixedCostDialog() {
           </div>
           <div className="grid gap-2">
             <Label htmlFor="fc-category">Danh mục</Label>
-            <Input id="fc-category" name="category" placeholder="Danh mục" required />
+            <Input id="fc-category" name="category" list="fc-cats-new" placeholder="Danh mục" required />
+            <datalist id="fc-cats-new">
+              {categories.map((c) => (
+                <option key={c} value={c} />
+              ))}
+            </datalist>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="fc-monthly">Hàng tháng (VND)</Label>
@@ -49,7 +54,7 @@ export function AddFixedCostDialog() {
               id="fc-monthly"
               name="monthlyAmount"
               type="number"
-              min={0}
+              min={1}
               placeholder="Số tiền"
               required
             />

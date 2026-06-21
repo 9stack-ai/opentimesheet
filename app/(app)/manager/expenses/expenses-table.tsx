@@ -1,7 +1,8 @@
 "use client";
 
+import * as React from "react";
 import { DataTable } from "@/components/data-table/data-table";
-import { expenseColumns } from "./expenses-columns";
+import { buildExpenseColumns } from "./expenses-columns";
 import { AddExpenseDialog } from "./add-expense-dialog";
 
 export type ExpenseRow = {
@@ -10,7 +11,7 @@ export type ExpenseRow = {
   category: string;
   projectLabel: string;
   amount: number;
-  // carried for the edit dialog (preserved on update)
+  // carried for the edit dialog (project & kind are now editable)
   projectId: string | null;
   kind: string;
   note: string | null;
@@ -21,21 +22,24 @@ type Project = { id: string; clientName: string; name: string };
 export function ExpensesTable({
   data,
   projects,
+  categories,
   today,
   kind = "REGULAR",
 }: {
   data: ExpenseRow[];
   projects: Project[];
+  categories: string[];
   today: string;
   kind?: "REGULAR" | "IRREGULAR";
 }) {
+  const columns = React.useMemo(() => buildExpenseColumns(projects, categories), [projects, categories]);
   return (
     <DataTable
-      columns={expenseColumns}
+      columns={columns}
       data={data}
       searchKey="category"
       searchPlaceholder="Tìm theo danh mục…"
-      toolbar={<AddExpenseDialog projects={projects} today={today} kind={kind} />}
+      toolbar={<AddExpenseDialog projects={projects} categories={categories} today={today} kind={kind} />}
     />
   );
 }

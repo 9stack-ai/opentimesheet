@@ -22,10 +22,12 @@ type Project = { id: string; clientName: string; name: string };
 
 export function AddExpenseDialog({
   projects,
+  categories = [],
   today,
   kind = "REGULAR",
 }: {
   projects: Project[];
+  categories?: string[];
   today: string;
   kind?: "REGULAR" | "IRREGULAR";
 }) {
@@ -52,7 +54,18 @@ export function AddExpenseDialog({
           <input type="hidden" name="kind" value={kind} />
           <div className="grid gap-2">
             <Label htmlFor="expense-category">Danh mục</Label>
-            <Input id="expense-category" name="category" placeholder="Danh mục" required />
+            <Input
+              id="expense-category"
+              name="category"
+              list="expense-cats-new"
+              placeholder="Danh mục"
+              required
+            />
+            <datalist id="expense-cats-new">
+              {categories.map((c) => (
+                <option key={c} value={c} />
+              ))}
+            </datalist>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="expense-amount">Số tiền (VND)</Label>
@@ -60,7 +73,7 @@ export function AddExpenseDialog({
               id="expense-amount"
               name="amount"
               type="number"
-              min={0}
+              min={1}
               placeholder="Số tiền"
               required
             />

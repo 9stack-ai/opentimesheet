@@ -23,8 +23,22 @@ import { SubmitButton } from "@/components/ui/submit-button";
 import { updateExpense, deleteExpense } from "./actions";
 import type { ExpenseRow } from "./expenses-table";
 
-export function ExpenseRowActions({ expense }: { expense: ExpenseRow }) {
+const selectClass =
+  "h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none";
+
+type Project = { id: string; clientName: string; name: string };
+
+export function ExpenseRowActions({
+  expense,
+  projects,
+  categories,
+}: {
+  expense: ExpenseRow;
+  projects: Project[];
+  categories: string[];
+}) {
   const [editOpen, setEditOpen] = React.useState(false);
+  const listId = `expense-cats-${expense.id}`;
 
   return (
     <div className="flex justify-end">
@@ -62,11 +76,20 @@ export function ExpenseRowActions({ expense }: { expense: ExpenseRow }) {
           </DialogHeader>
           <form action={updateExpense} onSubmit={() => setEditOpen(false)} className="flex flex-col gap-4">
             <input type="hidden" name="id" value={expense.id} />
-            <input type="hidden" name="kind" value={expense.kind} />
-            {expense.projectId ? <input type="hidden" name="projectId" value={expense.projectId} /> : null}
             <div className="grid gap-2">
               <Label htmlFor={`cat-${expense.id}`}>Danh mục</Label>
-              <Input id={`cat-${expense.id}`} name="category" defaultValue={expense.category} required />
+              <Input
+                id={`cat-${expense.id}`}
+                name="category"
+                list={listId}
+                defaultValue={expense.category}
+                required
+              />
+              <datalist id={listId}>
+                {categories.map((c) => (
+                  <option key={c} value={c} />
+                ))}
+              </datalist>
             </div>
             <div className="grid gap-2">
               <Label htmlFor={`amt-${expense.id}`}>Số tiền (VND)</Label>
@@ -74,7 +97,7 @@ export function ExpenseRowActions({ expense }: { expense: ExpenseRow }) {
                 id={`amt-${expense.id}`}
                 name="amount"
                 type="number"
-                min={0}
+                min={1}
                 defaultValue={expense.amount}
                 required
               />
@@ -82,6 +105,29 @@ export function ExpenseRowActions({ expense }: { expense: ExpenseRow }) {
             <div className="grid gap-2">
               <Label htmlFor={`date-${expense.id}`}>Ngày</Label>
               <Input id={`date-${expense.id}`} name="date" type="date" defaultValue={expense.date} required />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor={`proj-${expense.id}`}>Dự án</Label>
+              <select
+                id={`proj-${expense.id}`}
+                name="projectId"
+                defaultValue={expense.projectId ?? ""}
+                className={selectClass}
+              >
+                <option value="">Cấp công ty</option>
+                {projects.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.clientName} / {p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor={`kind-${expense.id}`}>Loại</Label>
+              <select id={`kind-${expense.id}`} name="kind" defaultValue={expense.kind} className={selectClass}>
+                <option value="REGULAR">Chi phí thường</option>
+                <option value="IRREGULAR">Chi bất thường</option>
+              </select>
             </div>
             <div className="grid gap-2">
               <Label htmlFor={`note-${expense.id}`}>Ghi chú (tuỳ chọn)</Label>
