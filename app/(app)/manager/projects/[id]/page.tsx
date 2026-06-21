@@ -2,6 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { formatVnd } from "@/lib/money";
+import { requireManager } from "@/lib/rbac";
+import { getRedmineClientForUser } from "@/lib/redmine/connection";
+import { RedmineError } from "@/lib/redmine/types";
 import { renameProject, setProjectStatus, deleteTask, removeAssignment, setProjectRedmineId } from "../actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,11 +15,15 @@ import { AddAssignmentDialog } from "./add-assignment-dialog";
 
 export const dynamic = "force-dynamic";
 
+const selectClass =
+  "h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none";
+
 export default async function ProjectDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const manager = await requireManager();
   const { id } = await params;
   const project = await prisma.project.findUnique({
     where: { id },
@@ -29,11 +36,31 @@ export default async function ProjectDetailPage({
   if (!project) notFound();
 
   const assignedUserIds = new Set(project.assignments.map((a) => a.userId));
-  const freelancers = await prisma.user.findMany({
-    where: { role: { in: ["FREELANCER", "EMPLOYEE"] }, status: "ACTIVE" },
+  // Any active user (all roles) can be a project member — so admins can log time on behalf of
+  // managers/admins and managers can join projects, not just freelancers/employees.
+  const assignableUsers = await prisma.user.findMany({
+    where: { status: "ACTIVE" },
     orderBy: { name: "asc" },
   });
-  const availableFreelancers = freelancers.filter((f) => !assignedUserIds.has(f.id));
+  const availableFreelancers = assignableUsers.filter((u) => !assignedUserIds.has(u.id));
+
+  // Redmine link picker: list the connected manager's Redmine projects to choose from, with a
+  // manual-ID fallback when Redmine isn't configured/connected or the API call fails.
+  const redmineConfigured = !!process.env.REDMINE_URL;
+  let redmineProjects: { id: number; name: string }[] | null = null;
+  let redmineListError: string | null = null;
+  if (redmineConfigured) {
+    const client = await getRedmineClientForUser(manager.id);
+    if (client) {
+      try {
+        const projs = await client.listProjects();
+        redmineProjects = projs.map((p) => ({ id: p.id, name: p.name }));
+      } catch (e) {
+        redmineListError =
+          e instanceof RedmineError ? e.message : "Không tải được danh sách dự án Redmine.";
+      }
+    }
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -81,26 +108,69 @@ export default async function ProjectDetailPage({
           <CardTitle className="text-base">Liên kết Redmine</CardTitle>
         </CardHeader>
         <CardContent>
-          <form action={setProjectRedmineId} className="flex items-end gap-2">
-            <input type="hidden" name="id" value={project.id} />
-            <div className="grid gap-1">
-              <label className="text-xs text-muted-foreground" htmlFor="redmine-project-id">
-                Redmine project ID (số). Để trống để gỡ liên kết.
-              </label>
-              <Input
-                id="redmine-project-id"
-                name="redmineProjectId"
-                type="number"
-                min={1}
-                defaultValue={project.redmineProjectId ?? ""}
-                className="w-48"
-                placeholder="vd: 42"
-              />
-            </div>
-            <Button type="submit" variant="outline">
-              Lưu
-            </Button>
-          </form>
+          {redmineProjects ? (
+            <form action={setProjectRedmineId} className="flex items-end gap-2">
+              <input type="hidden" name="id" value={project.id} />
+              <div className="grid gap-1">
+                <label className="text-xs text-muted-foreground" htmlFor="redmine-project-id">
+                  Chọn dự án Redmine để liên kết.
+                </label>
+                <select
+                  id="redmine-project-id"
+                  name="redmineProjectId"
+                  defaultValue={project.redmineProjectId ?? ""}
+                  className={`${selectClass} w-72`}
+                >
+                  <option value="">— Không liên kết —</option>
+                  {/* Keep the current link selectable even if it's no longer returned by the API. */}
+                  {project.redmineProjectId != null &&
+                  !redmineProjects.some((p) => p.id === project.redmineProjectId) ? (
+                    <option value={project.redmineProjectId}>
+                      #{project.redmineProjectId} (hiện tại)
+                    </option>
+                  ) : null}
+                  {redmineProjects.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      #{p.id} — {p.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <Button type="submit" variant="outline">
+                Lưu
+              </Button>
+            </form>
+          ) : (
+            <form action={setProjectRedmineId} className="flex flex-col gap-2">
+              <input type="hidden" name="id" value={project.id} />
+              <div className="flex items-end gap-2">
+                <div className="grid gap-1">
+                  <label className="text-xs text-muted-foreground" htmlFor="redmine-project-id">
+                    Redmine project ID (số). Để trống để gỡ liên kết.
+                  </label>
+                  <Input
+                    id="redmine-project-id"
+                    name="redmineProjectId"
+                    type="number"
+                    min={1}
+                    defaultValue={project.redmineProjectId ?? ""}
+                    className="w-48"
+                    placeholder="vd: 42"
+                  />
+                </div>
+                <Button type="submit" variant="outline">
+                  Lưu
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {!redmineConfigured
+                  ? "Admin chưa cấu hình REDMINE_URL — nhập ID thủ công."
+                  : redmineListError
+                    ? `Không tải được danh sách Redmine: ${redmineListError} — nhập ID thủ công.`
+                    : "Kết nối Redmine ở trang Cài đặt để chọn từ danh sách thay vì nhập ID."}
+              </p>
+            </form>
+          )}
         </CardContent>
       </Card>
 
