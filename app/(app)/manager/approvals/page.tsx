@@ -3,7 +3,7 @@ import { requireManager } from "@/lib/rbac";
 import { effectiveRates } from "@/lib/rates";
 import { formatVnd } from "@/lib/money";
 import { formatISODate } from "@/lib/period";
-import { approveEntries, rejectEntries } from "./actions";
+import { approveEntries, rejectEntries, retryRedminePush } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,6 +42,14 @@ export default async function ApprovalsPage() {
     arr.push(e);
     groups.set(e.user.id, arr);
   }
+
+  // Approved entries whose Redmine push failed — surfaced to the manager for retry.
+  const failedPushes = await prisma.timeEntry.findMany({
+    where: { status: "APPROVED", redminePushStatus: "failed" },
+    include: { user: { select: { name: true } }, task: { include: { project: true } } },
+    orderBy: { date: "desc" },
+    take: 50,
+  });
 
   return (
     <div className="flex flex-col gap-6">
@@ -106,6 +114,41 @@ export default async function ApprovalsPage() {
           </div>
         </form>
       )}
+
+      {failedPushes.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Đẩy Redmine lỗi ({failedPushes.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="flex flex-col gap-2 text-sm">
+              {failedPushes.map((e) => (
+                <li
+                  key={e.id}
+                  className="flex flex-wrap items-center gap-2 border-b pb-2 last:border-0 last:pb-0"
+                >
+                  <span className="font-medium">{e.user.name}</span>
+                  <span>
+                    {e.task.project.name} / {e.task.name}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {formatISODate(e.date)} · {e.hours.toString()} giờ
+                  </span>
+                  {e.redminePushError ? (
+                    <span className="text-destructive">{e.redminePushError}</span>
+                  ) : null}
+                  <form action={retryRedminePush} className="ml-auto">
+                    <input type="hidden" name="entryId" value={e.id} />
+                    <Button type="submit" size="sm" variant="outline">
+                      Đẩy lại
+                    </Button>
+                  </form>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      ) : null}
     </div>
   );
 }

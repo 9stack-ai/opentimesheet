@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 import { requireManager } from "@/lib/rbac";
 import { effectiveRates } from "@/lib/rates";
 import { nowSaigon } from "@/lib/clock";
-import { pushApprovedEntries } from "@/lib/redmine/push";
+import { pushApprovedEntries, retryPush } from "@/lib/redmine/push";
 
 /**
  * Approve SUBMITTED entries. Snapshots the effective cost & billable rate onto each
@@ -69,5 +69,14 @@ export async function rejectEntries(formData: FormData) {
     where: { id: { in: ids }, status: "SUBMITTED" },
     data: { status: "REJECTED", rejectReason: reason || null },
   });
+  revalidatePath("/manager/approvals");
+}
+
+/** Re-attempt a failed Redmine push for one approved entry (manager-initiated). */
+export async function retryRedminePush(formData: FormData) {
+  await requireManager();
+  const id = String(formData.get("entryId"));
+  if (!id) return;
+  await retryPush(id);
   revalidatePath("/manager/approvals");
 }
