@@ -83,3 +83,7 @@ export const fixedCostSchema = z.object({
   effectiveFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   effectiveTo: optionalDateString,
 });
+
+export const redmineConnectSchema = z.object({
+  apiKey: z.string().min(1).max(200),
+});

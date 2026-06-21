@@ -10,6 +10,7 @@ import {
   Clock,
   LayoutDashboard,
   LogOut,
+  Plug,
   Receipt,
   Repeat,
   Scale,
@@ -47,6 +48,7 @@ type Item = { href: string; label: string; icon: React.ComponentType<{ className
 const BASE: Item[] = [
   { href: "/", label: "Tổng quan", icon: LayoutDashboard },
   { href: "/timesheet", label: "Chấm công", icon: Clock },
+  { href: "/settings/redmine", label: "Kết nối Redmine", icon: Plug },
 ];
 const MANAGE: Item[] = [
   { href: "/manager/clients", label: "Khách hàng", icon: Building2 },
