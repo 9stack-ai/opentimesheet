@@ -40,7 +40,7 @@ export default async function FinanceOverviewPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold">Tổng quan thu chi</h1>
+      <h1 className="text-2xl font-semibold">Cân đối thu chi</h1>
 
       <PeriodNav basePath="/manager/reports/finance" period={period} now={now} />
 

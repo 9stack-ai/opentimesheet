@@ -48,32 +48,29 @@ import { signOutAction } from "@/lib/auth-actions";
 
 type Item = { href: string; label: string; icon: React.ComponentType<{ className?: string }> };
 
-const BASE: Item[] = [
-  { href: "/", label: "Tổng quan", icon: LayoutDashboard },
-  { href: "/timesheet", label: "Chấm công", icon: Clock },
-  { href: "/settings/redmine", label: "Kết nối Redmine", icon: Plug },
-];
-const MANAGE: Item[] = [
-  { href: "/manager/clients", label: "Khách hàng", icon: Building2 },
-  { href: "/manager/approvals", label: "Duyệt công", icon: CheckSquare },
+// Grouped by work domain. "Công việc" is built per-render (mixed roles), the rest are static.
+const HOME: Item[] = [{ href: "/", label: "Tổng quan", icon: LayoutDashboard }];
+const CLIENTS: Item[] = [{ href: "/manager/clients", label: "Khách hàng", icon: Building2 }];
+// Sổ quỹ: thu (income) + mọi khoản chi đặt cạnh nhau.
+const MONEY: Item[] = [
   { href: "/manager/income", label: "Nguồn thu", icon: Banknote },
-];
-const REPORTS: Item[] = [
-  { href: "/manager/reports/finance", label: "Tổng quan thu chi", icon: Scale },
-  { href: "/manager/reports/payout", label: "Chi trả CTV", icon: Wallet },
-  { href: "/manager/reports/billing", label: "Doanh thu KH", icon: Receipt },
-  { href: "/manager/reports/profitability", label: "Lợi nhuận", icon: TrendingUp },
-];
-const COSTS: Item[] = [
   { href: "/manager/disbursements", label: "Thực chi", icon: Coins },
   { href: "/manager/expenses", label: "Chi phí", icon: CircleDollarSign },
   { href: "/manager/irregular-expenses", label: "Chi bất thường", icon: Zap },
   { href: "/manager/fixed-costs", label: "Chi phí cố định", icon: Repeat },
 ];
+const REPORTS: Item[] = [
+  { href: "/manager/reports/finance", label: "Cân đối thu chi", icon: Scale },
+  { href: "/manager/reports/payout", label: "Chi trả CTV", icon: Wallet },
+  { href: "/manager/reports/billing", label: "Doanh thu KH", icon: Receipt },
+  { href: "/manager/reports/profitability", label: "Lợi nhuận", icon: TrendingUp },
+];
 const ADMIN_ITEMS: Item[] = [
   { href: "/admin/users", label: "Người dùng", icon: Users },
   { href: "/admin/audit", label: "Nhật ký hoạt động", icon: History },
 ];
+// Cài đặt cá nhân — mọi vai trò (Redmine connect là per-user).
+const PERSONAL: Item[] = [{ href: "/settings/redmine", label: "Kết nối Redmine", icon: Plug }];
 
 function NavRow({ item }: { item: Item }) {
   const pathname = usePathname();
@@ -116,6 +113,12 @@ export function AppSidebar({ user }: { user: { name: string; role: Role } }) {
   const isManager = atLeastManager(user.role);
   const isAdmin = user.role === "ADMIN";
 
+  // Công việc: Chấm công cho mọi vai trò; Duyệt công chỉ manager+.
+  const work: Item[] = [
+    { href: "/timesheet", label: "Chấm công", icon: Clock },
+    ...(isManager ? [{ href: "/manager/approvals", label: "Duyệt công", icon: CheckSquare }] : []),
+  ];
+
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
@@ -136,11 +139,13 @@ export function AppSidebar({ user }: { user: { name: string; role: Role } }) {
       </SidebarHeader>
 
       <SidebarContent>
-        <NavGroup items={BASE} />
-        {isManager ? <NavGroup label="Quản lý" items={MANAGE} /> : null}
+        <NavGroup items={HOME} />
+        <NavGroup label="Công việc" items={work} />
+        {isManager ? <NavGroup label="Khách hàng & dự án" items={CLIENTS} /> : null}
+        {isManager ? <NavGroup label="Thu chi" items={MONEY} /> : null}
         {isManager ? <NavGroup label="Báo cáo" items={REPORTS} /> : null}
-        {isManager ? <NavGroup label="Chi phí" items={COSTS} /> : null}
         {isAdmin ? <NavGroup label="Quản trị" items={ADMIN_ITEMS} /> : null}
+        <NavGroup label="Cá nhân" items={PERSONAL} />
       </SidebarContent>
 
       <SidebarFooter>
