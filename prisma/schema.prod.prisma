@@ -29,6 +29,7 @@ model User {
   redmineConnectedAt  DateTime?
   assignments         Assignment[]
   timeEntries         TimeEntry[]
+  disbursements       Disbursement[]
   inviteToken         InviteToken?
   createdAt           DateTime     @default(now())
 }
@@ -134,6 +135,22 @@ model Income {
   note       String?
   loggedById String
   createdAt  DateTime  @default(now())
+}
+
+// Actual money paid out to a person (thực chi), distinct from timesheet-derived payout
+// (which is only a record/accrual). periodLabel = the salary month it settles ("YYYY-MM").
+model Disbursement {
+  id          String   @id @default(cuid())
+  userId      String
+  amount      Int // VND actually paid
+  date        DateTime // payment date
+  periodLabel String // "YYYY-MM" salary month settled
+  note        String?
+  loggedById  String
+  user        User     @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@index([periodLabel])
 }
 
 model FixedCost {

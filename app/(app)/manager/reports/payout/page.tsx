@@ -48,7 +48,7 @@ export default async function PayoutReportPage({
         </Button>
       </div>
 
-      <PayoutTable data={rows} />
+      <PayoutTable data={rows} periodQuery={exportQuery} />
 
       {rows.length > 0 ? (
         <div className="flex flex-col gap-1 border-t pt-3 text-sm">

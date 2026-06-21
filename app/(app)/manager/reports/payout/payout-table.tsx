@@ -1,7 +1,7 @@
 "use client";
 
 import { DataTable } from "@/components/data-table/data-table";
-import { payoutColumns } from "./payout-columns";
+import { buildPayoutColumns } from "./payout-columns";
 
 export type PayoutRow = {
   userId: string;
@@ -14,10 +14,10 @@ export type PayoutRow = {
   totalCompanyCost: number;
 };
 
-export function PayoutTable({ data }: { data: PayoutRow[] }) {
+export function PayoutTable({ data, periodQuery }: { data: PayoutRow[]; periodQuery: string }) {
   return (
     <DataTable
-      columns={payoutColumns}
+      columns={buildPayoutColumns(periodQuery)}
       data={data}
       searchKey="userName"
       searchPlaceholder="Tìm theo tên CTV…"

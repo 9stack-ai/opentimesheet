@@ -9,6 +9,7 @@ import {
   ChevronsUpDown,
   CircleDollarSign,
   Clock,
+  Coins,
   LayoutDashboard,
   LogOut,
   Plug,
@@ -63,6 +64,7 @@ const REPORTS: Item[] = [
   { href: "/manager/reports/profitability", label: "Lợi nhuận", icon: TrendingUp },
 ];
 const COSTS: Item[] = [
+  { href: "/manager/disbursements", label: "Thực chi", icon: Coins },
   { href: "/manager/expenses", label: "Chi phí", icon: CircleDollarSign },
   { href: "/manager/irregular-expenses", label: "Chi bất thường", icon: Zap },
   { href: "/manager/fixed-costs", label: "Chi phí cố định", icon: Repeat },
