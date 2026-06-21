@@ -1,6 +1,7 @@
 // 9stimesheet schema — covers ALL features (payout, profitability, billing) up front.
 // SQLite (via @prisma/adapter-better-sqlite3). Money = integer VND dong; hours = Float.
 // SQLite has no native enums → role/status are String (validated in app via Zod + lib/roles).
+// Keep field/constraint parity with prisma/schema.prod.prisma (comments may differ).
 // Docs: https://pris.ly/d/prisma-schema
 
 generator client {
@@ -18,10 +19,14 @@ model User {
   name                String
   email               String       @unique
   passwordHash        String?
-  role                String       @default("FREELANCER") // ADMIN | MANAGER | FREELANCER
+  role                String       @default("FREELANCER") // ADMIN | MANAGER | EMPLOYEE | FREELANCER
   status              String       @default("INVITED") // ACTIVE | INVITED | DISABLED
   defaultCostRate     Int          @default(0) // VND/hour — what we pay
   defaultBillableRate Int          @default(0) // VND/hour — what the client pays
+  // Redmine integration (single shared instance; API key encrypted at rest)
+  redmineApiKeyEnc    String?
+  redmineUserId       Int?
+  redmineConnectedAt  DateTime?
   assignments         Assignment[]
   timeEntries         TimeEntry[]
   inviteToken         InviteToken?
@@ -38,26 +43,35 @@ model Client {
 }
 
 model Project {
-  id          String       @id @default(cuid())
-  clientId    String
-  client      Client       @relation(fields: [clientId], references: [id])
-  name        String
-  status      String       @default("ACTIVE") // ACTIVE | ARCHIVED
-  startDate   DateTime?
-  endDate     DateTime?
-  tasks       Task[]
-  assignments Assignment[]
-  expenses    Expense[]
-  createdAt   DateTime     @default(now())
+  id               String       @id @default(cuid())
+  clientId         String
+  client           Client       @relation(fields: [clientId], references: [id])
+  name             String
+  status           String       @default("ACTIVE") // ACTIVE | ARCHIVED
+  redmineProjectId Int? // mapped Redmine project id (single shared instance)
+  startDate        DateTime?
+  endDate          DateTime?
+  tasks            Task[]
+  assignments      Assignment[]
+  expenses         Expense[]
+  createdAt        DateTime     @default(now())
 }
 
 model Task {
-  id          String      @id @default(cuid())
-  projectId   String
-  project     Project     @relation(fields: [projectId], references: [id])
-  name        String
-  status      String      @default("open")
-  timeEntries TimeEntry[]
+  id               String      @id @default(cuid())
+  projectId        String
+  project          Project     @relation(fields: [projectId], references: [id])
+  name             String
+  status           String      @default("open")
+  // Redmine linkage (null for local tasks)
+  source           String      @default("LOCAL") // LOCAL | REDMINE
+  redmineIssueId   Int?
+  redmineUpdatedOn DateTime?
+  redmineClosed    Boolean     @default(false)
+  syncedAt         DateTime?
+  timeEntries      TimeEntry[]
+
+  @@unique([projectId, redmineIssueId])
 }
 
 model Assignment {
@@ -86,12 +100,18 @@ model TimeEntry {
   rejectReason         String?
   approvedById         String?
   approvedAt           DateTime?
+  // Redmine push (app time entry -> Redmine time entry)
+  redmineTimeEntryId   Int?
+  redminePushStatus    String    @default("pending") // pending | pushing | pushed | failed | skipped
+  redminePushedAt      DateTime?
+  redminePushError     String?
   user                 User      @relation(fields: [userId], references: [id])
   task                 Task      @relation(fields: [taskId], references: [id])
   createdAt            DateTime  @default(now())
 
   @@index([userId, date])
   @@index([status, date])
+  @@index([redminePushStatus])
 }
 
 model Expense {
