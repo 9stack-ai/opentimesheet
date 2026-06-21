@@ -3,6 +3,7 @@
 export const ROLE_LABEL: Record<string, string> = {
   ADMIN: "Quản trị viên",
   MANAGER: "Quản lý",
+  EMPLOYEE: "Nhân viên chính thức",
   FREELANCER: "Cộng tác viên",
 };
 

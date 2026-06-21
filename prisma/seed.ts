@@ -52,6 +52,20 @@ async function main() {
     },
   });
 
+  const employee = await prisma.user.upsert({
+    where: { email: "employee@9stack.local" },
+    update: {},
+    create: {
+      name: "Nhân viên A",
+      email: "employee@9stack.local",
+      role: "EMPLOYEE",
+      status: "ACTIVE",
+      passwordHash,
+      defaultCostRate: 100000,
+      defaultBillableRate: 220000,
+    },
+  });
+
   const client = await prisma.client.upsert({
     where: { id: "seed-client-acme" },
     update: {},
@@ -84,6 +98,11 @@ async function main() {
     where: { projectId_userId: { projectId: project.id, userId: freelancerB.id } },
     update: {},
     create: { projectId: project.id, userId: freelancerB.id },
+  });
+  await prisma.assignment.upsert({
+    where: { projectId_userId: { projectId: project.id, userId: employee.id } },
+    update: {},
+    create: { projectId: project.id, userId: employee.id },
   });
 
   await prisma.fixedCost.upsert({

@@ -49,7 +49,7 @@ export function AddAssignmentDialog({
         >
           <input type="hidden" name="projectId" value={projectId} />
           <div className="grid gap-2">
-            <Label>Cộng tác viên</Label>
+            <Label>Nhân sự</Label>
             <select name="userId" required className={selectClass}>
               {availableFreelancers.map((f) => (
                 <option key={f.id} value={f.id}>

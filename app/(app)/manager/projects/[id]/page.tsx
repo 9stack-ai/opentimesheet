@@ -30,7 +30,7 @@ export default async function ProjectDetailPage({
 
   const assignedUserIds = new Set(project.assignments.map((a) => a.userId));
   const freelancers = await prisma.user.findMany({
-    where: { role: "FREELANCER", status: "ACTIVE" },
+    where: { role: { in: ["FREELANCER", "EMPLOYEE"] }, status: "ACTIVE" },
     orderBy: { name: "asc" },
   });
   const availableFreelancers = freelancers.filter((f) => !assignedUserIds.has(f.id));
