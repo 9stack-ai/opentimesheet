@@ -13,6 +13,7 @@ export type EntryRow = {
   status: string;
   note: string | null;
   rejectReason: string | null;
+  redminePushStatus: string | null;
 };
 
 type Task = { id: string; label: string };

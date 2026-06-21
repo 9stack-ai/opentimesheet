@@ -81,3 +81,14 @@ export async function removeAssignment(formData: FormData) {
   await prisma.assignment.delete({ where: { id } });
   revalidatePath(`/manager/projects/${projectId}`);
 }
+
+export async function setProjectRedmineId(formData: FormData) {
+  await requireManager();
+  const id = String(formData.get("id"));
+  if (!id) return;
+  const raw = String(formData.get("redmineProjectId") ?? "").trim();
+  const redmineProjectId = raw === "" ? null : Number(raw);
+  if (redmineProjectId !== null && (!Number.isInteger(redmineProjectId) || redmineProjectId <= 0)) return;
+  await prisma.project.update({ where: { id }, data: { redmineProjectId } });
+  revalidatePath(`/manager/projects/${id}`);
+}

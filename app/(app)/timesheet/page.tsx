@@ -16,6 +16,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { submitPeriod } from "./actions";
 import { EntriesTable } from "./entries-table";
 import type { EntryRow } from "./entries-table";
+import { RedmineSyncButton } from "./redmine-sync-button";
 
 export const dynamic = "force-dynamic";
 
@@ -47,7 +48,7 @@ export default async function TimesheetPage({
   const projectIds = assignments.map((a) => a.projectId);
   const tasks = projectIds.length
     ? await prisma.task.findMany({
-        where: { projectId: { in: projectIds } },
+        where: { projectId: { in: projectIds }, redmineClosed: false },
         include: { project: { include: { client: true } } },
         orderBy: { name: "asc" },
       })
@@ -82,6 +83,7 @@ export default async function TimesheetPage({
     status: e.status,
     note: e.note,
     rejectReason: e.rejectReason,
+    redminePushStatus: e.redminePushStatus,
   }));
 
   return (
@@ -95,6 +97,7 @@ export default async function TimesheetPage({
         <Button variant="outline" size="sm" asChild>
           <Link href={`/timesheet?week=${currentWeekLabel}`}>Tuần này</Link>
         </Button>
+        <RedmineSyncButton />
         <div className="ml-auto flex items-center gap-4 text-sm">
           <span>
             Tổng: <span className="font-semibold">{totalHours} giờ</span>

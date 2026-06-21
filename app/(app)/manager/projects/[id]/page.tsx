@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { formatVnd } from "@/lib/money";
-import { renameProject, setProjectStatus, deleteTask, removeAssignment } from "../actions";
+import { renameProject, setProjectStatus, deleteTask, removeAssignment, setProjectRedmineId } from "../actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -69,6 +69,34 @@ export default async function ProjectDetailPage({
           <form action={renameProject} className="flex items-end gap-2">
             <input type="hidden" name="id" value={project.id} />
             <Input name="name" defaultValue={project.name} className="w-64" />
+            <Button type="submit" variant="outline">
+              Lưu
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Liên kết Redmine</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form action={setProjectRedmineId} className="flex items-end gap-2">
+            <input type="hidden" name="id" value={project.id} />
+            <div className="grid gap-1">
+              <label className="text-xs text-muted-foreground" htmlFor="redmine-project-id">
+                Redmine project ID (số). Để trống để gỡ liên kết.
+              </label>
+              <Input
+                id="redmine-project-id"
+                name="redmineProjectId"
+                type="number"
+                min={1}
+                defaultValue={project.redmineProjectId ?? ""}
+                className="w-48"
+                placeholder="vd: 42"
+              />
+            </div>
             <Button type="submit" variant="outline">
               Lưu
             </Button>

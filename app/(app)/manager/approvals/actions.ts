@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { requireManager } from "@/lib/rbac";
 import { effectiveRates } from "@/lib/rates";
 import { nowSaigon } from "@/lib/clock";
+import { pushApprovedEntries } from "@/lib/redmine/push";
 
 /**
  * Approve SUBMITTED entries. Snapshots the effective cost & billable rate onto each
@@ -49,6 +50,10 @@ export async function approveEntries(formData: FormData) {
       });
     }
   });
+
+  // Best-effort: push approved time to Redmine for entries on Redmine-linked tasks.
+  // Failures are recorded per entry and never affect the already-committed approval.
+  await pushApprovedEntries(entries.map((e) => e.id));
 
   revalidatePath("/manager/approvals");
 }

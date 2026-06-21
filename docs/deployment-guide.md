@@ -17,7 +17,7 @@ Single-host Docker Compose. Source lives in `/opt/9stimesheet` on the server.
 
 ## Secrets — `/opt/9stimesheet/.env` (chmod 600, never committed)
 
-`POSTGRES_USER/PASSWORD/DB`, `DATABASE_URL` (→ `db` service), `AUTH_SECRET`, `AUTH_URL=https://timesheet.9stack.vn`, `ADMIN_EMAIL/NAME/PASSWORD`. Template: `.env.production.example`.
+`POSTGRES_USER/PASSWORD/DB`, `DATABASE_URL` (→ `db` service), `AUTH_SECRET`, `AUTH_URL=https://timesheet.9stack.vn`, `ADMIN_EMAIL/NAME/PASSWORD`, and (for Redmine) `REDMINE_URL`, `REDMINE_ENC_KEY` (`openssl rand -base64 32`), optional `REDMINE_DEFAULT_ACTIVITY_ID`. Template: `.env.production.example`.
 
 ## Deploy / redeploy
 
@@ -47,6 +47,10 @@ ssh 9stack-prod 'cd /opt/9stimesheet && docker compose exec -T db pg_dump -U 9st
 - Firewall (`ufw`) allows only 22/80/443. PostgreSQL is reachable only on the internal compose network.
 - Production never uses the dev seed password (`password123`); the admin password is generated at deploy time.
 - After first login, change the admin password and rotate `ADMIN_PASSWORD` out of `.env`.
+
+## Redmine integration
+
+Single shared company Redmine. Set `REDMINE_URL` (admin) and `REDMINE_ENC_KEY` (`openssl rand -base64 32`; encrypts each user's API key at rest) in `.env`. Each user connects their own API key at **Kết nối Redmine** (`/settings/redmine`); managers map an app Project to a Redmine project id on the project page; users press **Đồng bộ Redmine** on the timesheet to pull their assigned issues as Tasks. Approved time is pushed back to the issue automatically (best-effort, idempotent). Optional `REDMINE_DEFAULT_ACTIVITY_ID` sets the time-entry activity when the instance has no default. Without `REDMINE_URL` the feature is dormant (no impact elsewhere). The new columns are additive/nullable — `prisma db push` applies them on the next deploy.
 
 ## Known constraints
 
