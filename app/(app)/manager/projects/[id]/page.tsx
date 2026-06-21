@@ -5,7 +5,14 @@ import { formatVnd } from "@/lib/money";
 import { requireManager } from "@/lib/rbac";
 import { getRedmineClientForUser } from "@/lib/redmine/connection";
 import { RedmineError } from "@/lib/redmine/types";
-import { renameProject, setProjectStatus, deleteTask, removeAssignment, setProjectRedmineId } from "../actions";
+import {
+  renameProject,
+  setProjectStatus,
+  deleteTask,
+  removeAssignment,
+  setProjectRedmineId,
+  deleteProject,
+} from "../actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -249,6 +256,27 @@ export default async function ProjectDetailPage({
                 </li>
               ))}
             </ul>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="border-destructive/30">
+        <CardContent className="pt-6">
+          {project.tasks.reduce((s, t) => s + t._count.timeEntries, 0) === 0 ? (
+            <form action={deleteProject} className="flex items-center gap-3">
+              <input type="hidden" name="id" value={project.id} />
+              <input type="hidden" name="clientId" value={project.clientId} />
+              <Button type="submit" variant="destructive" size="sm">
+                Xoá dự án
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Xoá cả hạng mục &amp; phân công; chi phí gắn dự án chuyển về cấp công ty.
+              </span>
+            </form>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Không thể xoá — dự án đã có công chấm. Lưu trữ nếu muốn ẩn.
+            </p>
           )}
         </CardContent>
       </Card>

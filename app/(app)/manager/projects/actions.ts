@@ -33,6 +33,25 @@ export async function setProjectStatus(formData: FormData) {
   revalidatePath(`/manager/projects/${id}`);
 }
 
+export async function deleteProject(formData: FormData) {
+  await requireManager();
+  const id = String(formData.get("id"));
+  const clientId = String(formData.get("clientId"));
+  if (!id) return;
+  // Guard: never delete a project that has logged time (protects approved timesheet data).
+  const entries = await prisma.timeEntry.count({ where: { task: { projectId: id } } });
+  if (entries > 0) return;
+  await prisma.$transaction([
+    // Keep any project-tagged expenses as company-level rather than deleting them.
+    prisma.expense.updateMany({ where: { projectId: id }, data: { projectId: null } }),
+    prisma.assignment.deleteMany({ where: { projectId: id } }),
+    prisma.task.deleteMany({ where: { projectId: id } }),
+    prisma.project.delete({ where: { id } }),
+  ]);
+  revalidatePath(`/manager/clients/${clientId}`);
+  redirect(`/manager/clients/${clientId}`);
+}
+
 export async function createTask(formData: FormData) {
   await requireManager();
   const parsed = taskSchema.safeParse(Object.fromEntries(formData));

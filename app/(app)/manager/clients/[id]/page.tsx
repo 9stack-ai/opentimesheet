@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { deleteClient } from "../actions";
+import { deleteProject } from "../../projects/actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProjectStatusBadge } from "@/components/status-badge";
@@ -19,7 +20,10 @@ export default async function ClientDetailPage({
   const client = await prisma.client.findUnique({
     where: { id },
     include: {
-      projects: { orderBy: { createdAt: "asc" } },
+      projects: {
+        orderBy: { createdAt: "asc" },
+        include: { _count: { select: { tasks: true } } },
+      },
       _count: { select: { projects: true } },
     },
   });
@@ -51,14 +55,25 @@ export default async function ClientDetailPage({
           ) : (
             <ul className="divide-y">
               {client.projects.map((p) => (
-                <li key={p.id} className="flex items-center justify-between py-2">
+                <li key={p.id} className="flex items-center justify-between gap-3 py-2">
                   <Link
                     href={`/manager/projects/${p.id}`}
                     className="font-medium text-primary hover:underline"
                   >
                     {p.name}
                   </Link>
-                  <ProjectStatusBadge status={p.status} />
+                  <div className="flex items-center gap-3">
+                    <ProjectStatusBadge status={p.status} />
+                    {p._count.tasks === 0 ? (
+                      <form action={deleteProject}>
+                        <input type="hidden" name="id" value={p.id} />
+                        <input type="hidden" name="clientId" value={client.id} />
+                        <Button type="submit" variant="ghost" size="sm" className="text-destructive">
+                          Xoá
+                        </Button>
+                      </form>
+                    ) : null}
+                  </div>
                 </li>
               ))}
             </ul>
