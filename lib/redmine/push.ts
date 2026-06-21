@@ -24,6 +24,14 @@ async function pushOne(entryId: string): Promise<void> {
     return;
   }
 
+  // Atomic claim: only one invocation moves a not-yet-pushed entry into "pushing".
+  // Prevents a double-post race once retry is wired (review M-2).
+  const claim = await prisma.timeEntry.updateMany({
+    where: { id: entryId, redmineTimeEntryId: null, redminePushStatus: { not: "pushing" } },
+    data: { redminePushStatus: "pushing" },
+  });
+  if (claim.count !== 1) return; // already pushed or being pushed by another invocation
+
   const client = await getRedmineClientForUser(entry.userId);
   if (!client) {
     await prisma.timeEntry.update({
@@ -33,7 +41,6 @@ async function pushOne(entryId: string): Promise<void> {
     return;
   }
 
-  await prisma.timeEntry.update({ where: { id: entryId }, data: { redminePushStatus: "pushing" } });
   try {
     const activityId = await resolveActivityId(client);
     if (activityId == null) {

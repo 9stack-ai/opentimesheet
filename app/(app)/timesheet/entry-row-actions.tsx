@@ -87,6 +87,9 @@ export function EntryRowActions({
                 className={selectClass}
                 aria-label="Công việc"
               >
+                {tasks.some((t) => t.id === entry.taskId) ? null : (
+                  <option value={entry.taskId}>{entry.taskLabel} (hiện tại)</option>
+                )}
                 {tasks.map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.label}
