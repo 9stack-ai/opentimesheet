@@ -5,7 +5,7 @@ import { atLeastManager } from "@/lib/roles";
 import { roleLabel } from "@/lib/labels";
 import { formatVnd } from "@/lib/money";
 import { nowSaigon } from "@/lib/clock";
-import { resolvePeriod, periodParam, type Period, type PeriodSearchParams } from "@/lib/period";
+import { resolvePeriod, allTimePeriod, periodParam, type Period, type PeriodSearchParams } from "@/lib/period";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FinanceChartCard } from "@/components/charts/finance-chart-card";
 import { HoursBarChart } from "@/components/charts/hours-bar-chart";
@@ -104,7 +104,10 @@ export default async function Home({
   const isManager = atLeastManager(user.role);
   const isAdmin = user.role === "ADMIN";
   const now = nowSaigon();
-  const period = resolvePeriod(await searchParams, now);
+  const sp = await searchParams;
+  // Trang Tổng quan mặc định tính TOÀN THỜI GIAN; vẫn lọc được kỳ cụ thể qua PeriodNav.
+  const hasPeriodParam = !!(sp.week || sp.month || sp.quarter || sp.half || sp.year || sp.all);
+  const period = hasPeriodParam ? resolvePeriod(sp, now) : allTimePeriod(now);
 
   const cards = [
     { href: "/timesheet", title: "Chấm công", desc: "Ghi giờ làm và gửi duyệt", icon: Clock, show: true },

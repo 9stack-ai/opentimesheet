@@ -19,6 +19,7 @@ const KIND_LABEL: Record<PeriodKind, string> = {
   quarter: "Quý",
   half: "6 tháng",
   year: "Năm",
+  all: "Toàn thời gian",
 };
 
 /** Period selector for report pages: prev/next within the current kind + presets that
@@ -43,6 +44,7 @@ export function PeriodNav({
     { kind: "quarter", value: quarterPeriodOf(now).label },
     { kind: "half", value: halfPeriodOf(now).label },
     { kind: "year", value: yearPeriodOf(now).label },
+    { kind: "all", value: "1" },
   ];
   const suffix = extraQuery ? `&${extraQuery}` : "";
   const link = (key: string, value: string) => `${basePath}?${key}=${value}${suffix}`;
@@ -50,17 +52,24 @@ export function PeriodNav({
   return (
     <div className="flex flex-wrap items-center gap-2">
       <div className="flex items-center gap-1">
-        <Button variant="outline" size="icon" className="size-8" asChild>
-          <Link href={link(prev.key, prev.value)} aria-label="Kỳ trước">
-            <ChevronLeft className="size-4" />
-          </Link>
-        </Button>
-        <span className="min-w-24 text-center text-sm font-medium">{period.label}</span>
-        <Button variant="outline" size="icon" className="size-8" asChild>
-          <Link href={link(next.key, next.value)} aria-label="Kỳ sau">
-            <ChevronRight className="size-4" />
-          </Link>
-        </Button>
+        {period.kind === "all" ? (
+          // All-time has no adjacent period — show the label only, no prev/next.
+          <span className="min-w-24 text-center text-sm font-medium">{period.label}</span>
+        ) : (
+          <>
+            <Button variant="outline" size="icon" className="size-8" asChild>
+              <Link href={link(prev.key, prev.value)} aria-label="Kỳ trước">
+                <ChevronLeft className="size-4" />
+              </Link>
+            </Button>
+            <span className="min-w-24 text-center text-sm font-medium">{period.label}</span>
+            <Button variant="outline" size="icon" className="size-8" asChild>
+              <Link href={link(next.key, next.value)} aria-label="Kỳ sau">
+                <ChevronRight className="size-4" />
+              </Link>
+            </Button>
+          </>
+        )}
       </div>
       <div className="flex flex-wrap items-center gap-1">
         {presets.map((p) => (

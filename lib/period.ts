@@ -2,7 +2,7 @@
 // to UTC-midnight Date values (matching how Prisma @db.Date round-trips).
 // Boundaries are [start, end) — start inclusive, end exclusive.
 
-export type PeriodKind = "week" | "month" | "quarter" | "half" | "year";
+export type PeriodKind = "week" | "month" | "quarter" | "half" | "year" | "all";
 
 export type Period = {
   kind: PeriodKind;
@@ -80,6 +80,18 @@ export function yearPeriod(year: number): Period {
 
 export function yearPeriodOf(date: Date): Period {
   return yearPeriod(date.getUTCFullYear());
+}
+
+/** "Toàn thời gian": từ trước mọi dữ liệu cho tới hết tháng hiện tại. End được chốt ở đầu
+ *  tháng kế tiếp (không phải tương lai xa) để chi phí cố định mở (no end-date) chỉ cộng các
+ *  tháng đã thực sự trôi qua, không bị nhân lên hàng trăm tháng. */
+export function allTimePeriod(now: Date): Period {
+  return {
+    kind: "all",
+    start: utcMidnight(2000, 0, 1),
+    end: utcMidnight(now.getUTCFullYear(), now.getUTCMonth() + 1, 1),
+    label: "Toàn thời gian",
+  };
 }
 
 /** ISO week number (and ISO year) for a calendar date. */
@@ -163,10 +175,12 @@ export type PeriodSearchParams = {
   quarter?: string;
   half?: string;
   year?: string;
+  all?: string;
 };
 
-/** Resolve a report period from URL params (priority week→month→quarter→half→year); else current month. */
+/** Resolve a report period from URL params (priority all→week→month→quarter→half→year); else current month. */
 export function resolvePeriod(sp: PeriodSearchParams, now: Date): Period {
+  if (sp.all) return allTimePeriod(now);
   if (sp.week) return weekPeriodFromString(sp.week) ?? weekPeriod(now);
   if (sp.month) return monthPeriodFromString(sp.month) ?? monthPeriodOf(now);
   if (sp.quarter) return quarterPeriodFromString(sp.quarter) ?? quarterPeriodOf(now);
@@ -184,6 +198,7 @@ export function resolvePeriodFromQuery(params: URLSearchParams, now: Date): Peri
       quarter: params.get("quarter") ?? undefined,
       half: params.get("half") ?? undefined,
       year: params.get("year") ?? undefined,
+      all: params.get("all") ?? undefined,
     },
     now,
   );
@@ -191,6 +206,7 @@ export function resolvePeriodFromQuery(params: URLSearchParams, now: Date): Peri
 
 /** The URL query key+value that reproduces this period (key === kind). */
 export function periodParam(period: Period): { key: PeriodKind; value: string } {
+  if (period.kind === "all") return { key: "all", value: "1" };
   return { key: period.kind, value: period.label };
 }
 
@@ -209,6 +225,8 @@ export function shiftPeriod(period: Period, delta: number): Period {
       return halfPeriodOf(new Date(Date.UTC(y, s.getUTCMonth() + delta * 6, 1)));
     case "year":
       return yearPeriod(y + delta);
+    case "all":
+      return period; // all-time has no adjacent period
   }
 }
 
