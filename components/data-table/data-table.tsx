@@ -104,10 +104,27 @@ export function DataTable<TData, TValue>({
         </Table>
       </div>
 
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-muted-foreground">
-          {table.getFilteredRowModel().rows.length} dòng
-        </span>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <span>{table.getFilteredRowModel().rows.length} dòng</span>
+          <span aria-hidden>·</span>
+          <label className="flex items-center gap-1">
+            Hiển thị
+            <select
+              value={table.getState().pagination.pageSize}
+              onChange={(e) => table.setPageSize(Number(e.target.value))}
+              className="h-8 rounded-md border border-input bg-transparent px-2 text-sm shadow-xs focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              aria-label="Số dòng mỗi trang"
+            >
+              {[10, 20, 50, 100].map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+            / trang
+          </label>
+        </div>
         {table.getPageCount() > 1 ? (
           <div className="flex items-center gap-2">
             <Button

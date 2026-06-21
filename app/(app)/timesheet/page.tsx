@@ -1,18 +1,11 @@
-import Link from "next/link";
 import { requireUser } from "@/lib/rbac";
 import { prisma } from "@/lib/db";
-import {
-  formatISODate,
-  monthPeriod,
-  weekPeriod,
-  monthPeriodFromString,
-  weekPeriodFromString,
-  type Period,
-} from "@/lib/period";
+import { formatISODate, resolvePeriod, type PeriodSearchParams } from "@/lib/period";
 import { nowSaigon } from "@/lib/clock";
 import { formatVnd } from "@/lib/money";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { PeriodNav } from "@/components/reports/period-nav";
 import { submitPeriod } from "./actions";
 import { EntriesTable } from "./entries-table";
 import type { EntryRow } from "./entries-table";
@@ -24,7 +17,7 @@ export const dynamic = "force-dynamic";
 export default async function TimesheetPage({
   searchParams,
 }: {
-  searchParams: Promise<{ month?: string; week?: string; userId?: string }>;
+  searchParams: Promise<PeriodSearchParams & { userId?: string }>;
 }) {
   const sessionUser = await requireUser();
   const isAdmin = sessionUser.role === "ADMIN";
@@ -50,17 +43,8 @@ export default async function TimesheetPage({
     : "";
 
   const saigonNow = nowSaigon();
-  const curYear = saigonNow.getUTCFullYear();
-  const curMonth = saigonNow.getUTCMonth() + 1;
   const todayStr = saigonNow.toISOString().slice(0, 10);
-
-  let period: Period;
-  if (sp.week) period = weekPeriodFromString(sp.week) ?? weekPeriod(saigonNow);
-  else if (sp.month) period = monthPeriodFromString(sp.month) ?? monthPeriod(curYear, curMonth);
-  else period = monthPeriod(curYear, curMonth);
-
-  const currentMonthLabel = monthPeriod(curYear, curMonth).label;
-  const currentWeekLabel = weekPeriod(saigonNow).label;
+  const period = resolvePeriod(sp, saigonNow);
 
   const assignments = await prisma.assignment.findMany({
     where: { userId: targetUserId },
@@ -115,13 +99,12 @@ export default async function TimesheetPage({
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-2xl font-semibold">Chấm công</h1>
-        <span className="text-sm text-muted-foreground">Kỳ: {period.label}</span>
-        <Button variant="outline" size="sm" asChild>
-          <Link href={`/timesheet?month=${currentMonthLabel}`}>Tháng này</Link>
-        </Button>
-        <Button variant="outline" size="sm" asChild>
-          <Link href={`/timesheet?week=${currentWeekLabel}`}>Tuần này</Link>
-        </Button>
+        <PeriodNav
+          basePath="/timesheet"
+          period={period}
+          now={saigonNow}
+          extraQuery={viewingOther ? `userId=${targetUserId}` : undefined}
+        />
         {isAdmin ? <UserPicker users={userOptions} value={targetUserId} /> : null}
         {!viewingOther ? <RedmineSyncButton /> : null}
         <div className="ml-auto flex items-center gap-4 text-sm">

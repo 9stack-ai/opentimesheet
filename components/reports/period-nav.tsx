@@ -27,10 +27,13 @@ export function PeriodNav({
   basePath,
   period,
   now,
+  extraQuery,
 }: {
   basePath: string;
   period: Period;
   now: Date;
+  /** Extra query string (e.g. "userId=abc") preserved on every link. */
+  extraQuery?: string;
 }) {
   const prev = periodParam(shiftPeriod(period, -1));
   const next = periodParam(shiftPeriod(period, 1));
@@ -41,7 +44,8 @@ export function PeriodNav({
     { kind: "half", value: halfPeriodOf(now).label },
     { kind: "year", value: yearPeriodOf(now).label },
   ];
-  const link = (key: string, value: string) => `${basePath}?${key}=${value}`;
+  const suffix = extraQuery ? `&${extraQuery}` : "";
+  const link = (key: string, value: string) => `${basePath}?${key}=${value}${suffix}`;
 
   return (
     <div className="flex flex-wrap items-center gap-2">
