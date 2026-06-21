@@ -4,9 +4,12 @@ import { requireUser } from "@/lib/rbac";
 import { atLeastManager } from "@/lib/roles";
 import { roleLabel } from "@/lib/labels";
 import { formatVnd } from "@/lib/money";
+import { nowSaigon } from "@/lib/clock";
+import { resolvePeriod, type Period, type PeriodSearchParams } from "@/lib/period";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FinanceChartCard } from "@/components/charts/finance-chart-card";
 import { HoursBarChart } from "@/components/charts/hours-bar-chart";
+import { PeriodNav } from "@/components/reports/period-nav";
 import { managerKpis, managerMonthlyFinance, freelancerMonthlyHours } from "@/lib/dashboard";
 
 export const dynamic = "force-dynamic";
@@ -24,14 +27,14 @@ function Kpi({ label, value }: { label: string; value: string }) {
   );
 }
 
-async function ManagerCharts() {
-  const [kpis, finance] = await Promise.all([managerKpis(), managerMonthlyFinance(12)]);
+async function ManagerCharts({ period }: { period: Period }) {
+  const [kpis, finance] = await Promise.all([managerKpis(period), managerMonthlyFinance(12)]);
   return (
     <>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi label="Doanh thu tháng này" value={formatVnd(kpis.revenue)} />
-        <Kpi label="Chi trả CTV tháng này" value={formatVnd(kpis.payout)} />
-        <Kpi label="Lợi nhuận tháng này" value={formatVnd(kpis.net)} />
+        <Kpi label={`Doanh thu (${period.label})`} value={formatVnd(kpis.revenue)} />
+        <Kpi label={`Chi trả CTV (${period.label})`} value={formatVnd(kpis.payout)} />
+        <Kpi label={`Lợi nhuận (${period.label})`} value={formatVnd(kpis.net)} />
         <Kpi label="Dự án đang chạy" value={String(kpis.activeProjects)} />
       </div>
       <FinanceChartCard data={finance} />
@@ -54,10 +57,16 @@ async function FreelancerCharts({ userId }: { userId: string }) {
   );
 }
 
-export default async function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<PeriodSearchParams>;
+}) {
   const user = await requireUser();
   const isManager = atLeastManager(user.role);
   const isAdmin = user.role === "ADMIN";
+  const now = nowSaigon();
+  const period = resolvePeriod(await searchParams, now);
 
   const cards = [
     { href: "/timesheet", title: "Chấm công", desc: "Ghi giờ làm và gửi duyệt", icon: Clock, show: true },
@@ -75,7 +84,14 @@ export default async function Home() {
         <p className="text-muted-foreground">Bạn đang đăng nhập với vai trò {roleLabel(user.role)}.</p>
       </div>
 
-      {isManager ? <ManagerCharts /> : <FreelancerCharts userId={user.id} />}
+      {isManager ? (
+        <>
+          <PeriodNav basePath="/" period={period} now={now} />
+          <ManagerCharts period={period} />
+        </>
+      ) : (
+        <FreelancerCharts userId={user.id} />
+      )}
 
       <div>
         <h2 className="mb-3 text-sm font-medium text-muted-foreground">Lối tắt</h2>

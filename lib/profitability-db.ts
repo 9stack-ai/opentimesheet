@@ -8,10 +8,13 @@ import { computeProfitability, type ProfitabilityInput, type Profitability } fro
 
 /** Fetch + shape period data, then run the pure profitability engine. */
 export async function profitabilityForPeriod(period: Period): Promise<Profitability> {
+  // Allocate fixed costs for any whole-month-aligned period (month/quarter/half/year);
+  // weekly stays gross-margin only. totalFixedCostsForPeriod scales by months covered.
+  const allocateFixed = period.kind !== "week";
   const [entries, expenses, totalFixed] = await Promise.all([
     approvedEntriesForPeriod(period),
     expensesForPeriod(period),
-    period.kind === "month" ? fixedCostsTotalForPeriod(period) : Promise.resolve(0),
+    allocateFixed ? fixedCostsTotalForPeriod(period) : Promise.resolve(0),
   ]);
 
   const map = new Map<
@@ -45,5 +48,5 @@ export async function profitabilityForPeriod(period: Period): Promise<Profitabil
     totalFixed,
     companyExpenses: expenses.companyTotal,
   };
-  return computeProfitability(input, period.kind === "month");
+  return computeProfitability(input, allocateFixed);
 }

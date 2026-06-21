@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { nowSaigon } from "@/lib/clock";
-import { monthPeriod } from "@/lib/period";
+import { monthPeriod, type Period } from "@/lib/period";
 import { profitabilityForPeriod } from "@/lib/profitability-db";
 import { approvedEntriesForPeriod } from "@/lib/reporting-db";
 
@@ -38,10 +38,8 @@ export async function managerMonthlyFinance(n = 6): Promise<FinancePoint[]> {
   );
 }
 
-/** Current-month KPIs for managers. */
-export async function managerKpis(): Promise<ManagerKpis> {
-  const now = nowSaigon();
-  const period = monthPeriod(now.getUTCFullYear(), now.getUTCMonth() + 1);
+/** KPIs for managers over the given period. */
+export async function managerKpis(period: Period): Promise<ManagerKpis> {
   const [p, entries, activeProjects] = await Promise.all([
     profitabilityForPeriod(period),
     approvedEntriesForPeriod(period),

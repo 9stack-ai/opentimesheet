@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 import { auth } from "@/auth";
 import { atLeastManager } from "@/lib/roles";
 import { profitabilityForPeriod } from "@/lib/profitability-db";
-import { monthPeriod, monthPeriodFromString, weekPeriodFromString, type Period } from "@/lib/period";
+import { resolvePeriodFromQuery } from "@/lib/period";
 import { nowSaigon } from "@/lib/clock";
 import { toCsv } from "@/lib/csv";
 
@@ -12,15 +12,7 @@ export async function GET(req: NextRequest) {
     return new Response("Forbidden", { status: 403 });
   }
 
-  const now = nowSaigon();
-  const fallback = monthPeriod(now.getUTCFullYear(), now.getUTCMonth() + 1);
-  const week = req.nextUrl.searchParams.get("week");
-  const month = req.nextUrl.searchParams.get("month");
-
-  let period: Period;
-  if (week) period = weekPeriodFromString(week) ?? fallback;
-  else if (month) period = monthPeriodFromString(month) ?? fallback;
-  else period = fallback;
+  const period = resolvePeriodFromQuery(req.nextUrl.searchParams, nowSaigon());
 
   const { perProject, company } = await profitabilityForPeriod(period);
   const rows: (string | number)[][] = perProject.map((p) => [

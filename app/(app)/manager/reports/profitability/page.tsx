@@ -1,41 +1,31 @@
-import Link from "next/link";
 import { requireManager } from "@/lib/rbac";
 import { profitabilityForPeriod } from "@/lib/profitability-db";
 import { formatVnd } from "@/lib/money";
-import {
-  monthPeriod,
-  weekPeriod,
-  monthPeriodFromString,
-  weekPeriodFromString,
-  type Period,
-} from "@/lib/period";
+import { resolvePeriod, periodParam, type PeriodSearchParams } from "@/lib/period";
 import { nowSaigon } from "@/lib/clock";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProfitabilityTable } from "./profitability-table";
 import type { ProfitabilityRow } from "./profitability-table";
+import { PeriodNav } from "@/components/reports/period-nav";
 
 export const dynamic = "force-dynamic";
 
 export default async function ProfitabilityReportPage({
   searchParams,
 }: {
-  searchParams: Promise<{ month?: string; week?: string }>;
+  searchParams: Promise<PeriodSearchParams>;
 }) {
   await requireManager();
   const sp = await searchParams;
   const now = nowSaigon();
-  const cy = now.getUTCFullYear();
-  const cm = now.getUTCMonth() + 1;
-
-  let period: Period;
-  if (sp.week) period = weekPeriodFromString(sp.week) ?? weekPeriod(now);
-  else if (sp.month) period = monthPeriodFromString(sp.month) ?? monthPeriod(cy, cm);
-  else period = monthPeriod(cy, cm);
+  const period = resolvePeriod(sp, now);
 
   const { perProject, company } = await profitabilityForPeriod(period);
-  const isMonthly = period.kind === "month";
-  const exportQuery = isMonthly ? `month=${period.label}` : `week=${period.label}`;
+  // Fixed costs are allocated for every whole-month-aligned span; weekly = gross margin only.
+  const allocatesFixed = period.kind !== "week";
+  const ep = periodParam(period);
+  const exportQuery = `${ep.key}=${ep.value}`;
 
   const rows: ProfitabilityRow[] = perProject.map((p) => ({
     projectId: p.projectId,
@@ -56,31 +46,23 @@ export default async function ProfitabilityReportPage({
       </p>
 
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm text-muted-foreground">
-          Kỳ: {period.label}
-          {isMonthly ? "" : " (tuần = biên lợi nhuận gộp, chưa phân bổ chi phí cố định)"}
-        </span>
-        <Button variant="outline" size="sm" asChild>
-          <Link href={`/manager/reports/profitability?month=${monthPeriod(cy, cm).label}`}>
-            Tháng này
-          </Link>
-        </Button>
-        <Button variant="outline" size="sm" asChild>
-          <Link href={`/manager/reports/profitability?week=${weekPeriod(now).label}`}>
-            Tuần này
-          </Link>
-        </Button>
+        <PeriodNav basePath="/manager/reports/profitability" period={period} now={now} />
+        {allocatesFixed ? null : (
+          <span className="text-xs text-muted-foreground">
+            Tuần: biên lợi nhuận gộp, chưa phân bổ chi phí cố định
+          </span>
+        )}
         <Button variant="outline" size="sm" className="ml-auto" asChild>
           <a href={`/manager/reports/profitability/export?${exportQuery}`}>Xuất CSV</a>
         </Button>
       </div>
 
-      <ProfitabilityTable data={rows} isMonthly={isMonthly} />
+      <ProfitabilityTable data={rows} isMonthly={allocatesFixed} />
 
       <Card>
         <CardHeader>
           <CardTitle className="text-base">
-            Công ty — {isMonthly ? "lãi/lỗ ròng" : "biên lợi nhuận gộp"}
+            Công ty — {allocatesFixed ? "lãi/lỗ ròng" : "biên lợi nhuận gộp"}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -89,7 +71,7 @@ export default async function ProfitabilityReportPage({
             <dd className="text-right">{formatVnd(company.revenue)}</dd>
             <dt>Chi phí trực tiếp</dt>
             <dd className="text-right">{formatVnd(company.directCost)}</dd>
-            {isMonthly ? (
+            {allocatesFixed ? (
               <>
                 <dt>Chi phí cố định</dt>
                 <dd className="text-right">{formatVnd(company.totalFixed)}</dd>

@@ -86,15 +86,33 @@ export function fixedCostActiveInPeriod(fc: FixedCostInput, periodStart: Date, p
   return startsBeforeEnd && endsAfterStart;
 }
 
-/** Sum of monthlyAmount for fixed costs active in the period (counted once; monthly periods). */
+/** Total monthly fixed costs accrued over a period: each cost counts once per whole
+ *  calendar month in [start, end) that it is active — so a month ≈ 1×, a quarter ≈ 3×,
+ *  a year ≈ 12×. A sub-month (weekly) range only counts whole months it fully covers, so
+ *  a mid-month week contributes 0. */
 export function totalFixedCostsForPeriod(
   fixedCosts: FixedCostInput[],
   periodStart: Date,
   periodEnd: Date,
 ): number {
-  return fixedCosts
-    .filter((fc) => fixedCostActiveInPeriod(fc, periodStart, periodEnd))
-    .reduce((sum, fc) => sum + fc.monthlyAmount, 0);
+  const months: { start: Date; end: Date }[] = [];
+  let m = periodStart.getUTCMonth();
+  const y = periodStart.getUTCFullYear();
+  if (Date.UTC(y, m, 1) < periodStart.getTime()) m += 1; // skip a partial leading month
+  for (;;) {
+    const start = new Date(Date.UTC(y, m, 1)); // Date.UTC rolls month/year over
+    if (start.getTime() >= periodEnd.getTime()) break;
+    months.push({ start, end: new Date(Date.UTC(y, m + 1, 1)) });
+    m += 1;
+  }
+
+  let total = 0;
+  for (const fc of fixedCosts) {
+    for (const mo of months) {
+      if (fixedCostActiveInPeriod(fc, mo.start, mo.end)) total += fc.monthlyAmount;
+    }
+  }
+  return total;
 }
 
 export type BillingProjectRow = {

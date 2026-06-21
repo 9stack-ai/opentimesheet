@@ -1,36 +1,23 @@
-import Link from "next/link";
 import { requireManager } from "@/lib/rbac";
 import { financeOverview } from "@/lib/finance-overview";
 import { formatVnd } from "@/lib/money";
-import {
-  monthPeriod,
-  weekPeriod,
-  monthPeriodFromString,
-  weekPeriodFromString,
-  type Period,
-} from "@/lib/period";
+import { resolvePeriod, type PeriodSearchParams } from "@/lib/period";
 import { nowSaigon } from "@/lib/clock";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ExpenseDonutChart } from "@/components/charts/expense-donut-chart";
+import { PeriodNav } from "@/components/reports/period-nav";
 
 export const dynamic = "force-dynamic";
 
 export default async function FinanceOverviewPage({
   searchParams,
 }: {
-  searchParams: Promise<{ month?: string; week?: string }>;
+  searchParams: Promise<PeriodSearchParams>;
 }) {
   await requireManager();
   const sp = await searchParams;
   const now = nowSaigon();
-  const cy = now.getUTCFullYear();
-  const cm = now.getUTCMonth() + 1;
-
-  let period: Period;
-  if (sp.week) period = weekPeriodFromString(sp.week) ?? weekPeriod(now);
-  else if (sp.month) period = monthPeriodFromString(sp.month) ?? monthPeriod(cy, cm);
-  else period = monthPeriod(cy, cm);
+  const period = resolvePeriod(sp, now);
 
   const f = await financeOverview(period);
   const breakdown = [
@@ -45,15 +32,7 @@ export default async function FinanceOverviewPage({
     <div className="flex flex-col gap-6">
       <h1 className="text-2xl font-semibold">Tổng quan thu chi</h1>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm text-muted-foreground">Kỳ: {period.label}</span>
-        <Button variant="outline" size="sm" asChild>
-          <Link href={`/manager/reports/finance?month=${monthPeriod(cy, cm).label}`}>Tháng này</Link>
-        </Button>
-        <Button variant="outline" size="sm" asChild>
-          <Link href={`/manager/reports/finance?week=${weekPeriod(now).label}`}>Tuần này</Link>
-        </Button>
-      </div>
+      <PeriodNav basePath="/manager/reports/finance" period={period} now={now} />
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>

@@ -6,7 +6,7 @@ import {
   totalFixedCostsForPeriod,
   type ApprovedEntry,
 } from "@/lib/reporting";
-import { monthPeriod } from "@/lib/period";
+import { monthPeriod, quarterPeriod, yearPeriod, weekPeriod } from "@/lib/period";
 
 function entry(p: Partial<ApprovedEntry>): ApprovedEntry {
   return {
@@ -100,6 +100,29 @@ describe("totalFixedCostsForPeriod", () => {
       june.end,
     );
     expect(total).toBe(20000000);
+  });
+
+  it("accrues per active month: a quarter ≈ 3×, a year ≈ 12×", () => {
+    const cost = [{ monthlyAmount: 10000000, effectiveFrom: new Date("2026-01-01"), effectiveTo: null }];
+    const q = quarterPeriod(2026, 2);
+    const y = yearPeriod(2026);
+    expect(totalFixedCostsForPeriod(cost, q.start, q.end)).toBe(30000000); // Apr+May+Jun
+    expect(totalFixedCostsForPeriod(cost, y.start, y.end)).toBe(120000000); // 12 months
+  });
+
+  it("only counts months where the cost is active", () => {
+    const cost = [
+      // active May–Jun only
+      { monthlyAmount: 1000000, effectiveFrom: new Date("2026-05-01"), effectiveTo: new Date("2026-06-30") },
+    ];
+    const q2 = quarterPeriod(2026, 2); // Apr,May,Jun → 2 active months
+    expect(totalFixedCostsForPeriod(cost, q2.start, q2.end)).toBe(2000000);
+  });
+
+  it("a mid-month week contributes no whole month", () => {
+    const cost = [{ monthlyAmount: 9000000, effectiveFrom: new Date("2026-01-01"), effectiveTo: null }];
+    const w = weekPeriod(new Date(Date.UTC(2026, 5, 17))); // 2026-06-15..22, inside June
+    expect(totalFixedCostsForPeriod(cost, w.start, w.end)).toBe(0);
   });
 });
 

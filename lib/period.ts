@@ -2,7 +2,7 @@
 // to UTC-midnight Date values (matching how Prisma @db.Date round-trips).
 // Boundaries are [start, end) — start inclusive, end exclusive.
 
-export type PeriodKind = "month" | "week";
+export type PeriodKind = "week" | "month" | "quarter" | "half" | "year";
 
 export type Period = {
   kind: PeriodKind;
@@ -32,6 +32,54 @@ export function monthPeriod(year: number, month1: number): Period {
     end: utcMidnight(year, month1, 1),
     label: `${year}-${String(month1).padStart(2, "0")}`,
   };
+}
+
+export function monthPeriodOf(date: Date): Period {
+  return monthPeriod(date.getUTCFullYear(), date.getUTCMonth() + 1);
+}
+
+/** Calendar quarter (1–4): Q1 = Jan–Mar … Q4 = Oct–Dec. */
+export function quarterPeriod(year: number, quarter: number): Period {
+  const startMonth0 = (quarter - 1) * 3;
+  return {
+    kind: "quarter",
+    start: utcMidnight(year, startMonth0, 1),
+    end: utcMidnight(year, startMonth0 + 3, 1),
+    label: `${year}-Q${quarter}`,
+  };
+}
+
+export function quarterPeriodOf(date: Date): Period {
+  return quarterPeriod(date.getUTCFullYear(), Math.floor(date.getUTCMonth() / 3) + 1);
+}
+
+/** Calendar half-year (1 = Jan–Jun, 2 = Jul–Dec). */
+export function halfPeriod(year: number, half: number): Period {
+  const startMonth0 = (half - 1) * 6;
+  return {
+    kind: "half",
+    start: utcMidnight(year, startMonth0, 1),
+    end: utcMidnight(year, startMonth0 + 6, 1),
+    label: `${year}-H${half}`,
+  };
+}
+
+export function halfPeriodOf(date: Date): Period {
+  return halfPeriod(date.getUTCFullYear(), date.getUTCMonth() < 6 ? 1 : 2);
+}
+
+/** Calendar year (Jan–Dec). */
+export function yearPeriod(year: number): Period {
+  return {
+    kind: "year",
+    start: utcMidnight(year, 0, 1),
+    end: utcMidnight(year + 1, 0, 1),
+    label: `${year}`,
+  };
+}
+
+export function yearPeriodOf(date: Date): Period {
+  return yearPeriod(date.getUTCFullYear());
 }
 
 /** ISO week number (and ISO year) for a calendar date. */
@@ -86,6 +134,82 @@ export function weekPeriodFromString(value: string): Period | null {
   const week = Number(m[2]);
   if (week < 1 || week > 53) return null;
   return weekPeriod(isoWeekToMonday(year, week));
+}
+
+/** Parse "YYYY-Qn" → quarter period, or null. */
+export function quarterPeriodFromString(value: string): Period | null {
+  const m = /^(\d{4})-Q([1-4])$/.exec(value);
+  if (!m) return null;
+  return quarterPeriod(Number(m[1]), Number(m[2]));
+}
+
+/** Parse "YYYY-Hn" → half-year period, or null. */
+export function halfPeriodFromString(value: string): Period | null {
+  const m = /^(\d{4})-H([1-2])$/.exec(value);
+  if (!m) return null;
+  return halfPeriod(Number(m[1]), Number(m[2]));
+}
+
+/** Parse "YYYY" → year period, or null. */
+export function yearPeriodFromString(value: string): Period | null {
+  const m = /^(\d{4})$/.exec(value);
+  if (!m) return null;
+  return yearPeriod(Number(m[1]));
+}
+
+export type PeriodSearchParams = {
+  week?: string;
+  month?: string;
+  quarter?: string;
+  half?: string;
+  year?: string;
+};
+
+/** Resolve a report period from URL params (priority week→month→quarter→half→year); else current month. */
+export function resolvePeriod(sp: PeriodSearchParams, now: Date): Period {
+  if (sp.week) return weekPeriodFromString(sp.week) ?? weekPeriod(now);
+  if (sp.month) return monthPeriodFromString(sp.month) ?? monthPeriodOf(now);
+  if (sp.quarter) return quarterPeriodFromString(sp.quarter) ?? quarterPeriodOf(now);
+  if (sp.half) return halfPeriodFromString(sp.half) ?? halfPeriodOf(now);
+  if (sp.year) return yearPeriodFromString(sp.year) ?? yearPeriodOf(now);
+  return monthPeriodOf(now);
+}
+
+/** Resolve a report period straight from a URLSearchParams (for export routes). */
+export function resolvePeriodFromQuery(params: URLSearchParams, now: Date): Period {
+  return resolvePeriod(
+    {
+      week: params.get("week") ?? undefined,
+      month: params.get("month") ?? undefined,
+      quarter: params.get("quarter") ?? undefined,
+      half: params.get("half") ?? undefined,
+      year: params.get("year") ?? undefined,
+    },
+    now,
+  );
+}
+
+/** The URL query key+value that reproduces this period (key === kind). */
+export function periodParam(period: Period): { key: PeriodKind; value: string } {
+  return { key: period.kind, value: period.label };
+}
+
+/** Adjacent period of the same kind (delta = -1 previous, +1 next). */
+export function shiftPeriod(period: Period, delta: number): Period {
+  const s = period.start;
+  const y = s.getUTCFullYear();
+  switch (period.kind) {
+    case "week":
+      return weekPeriod(new Date(s.getTime() + delta * 7 * 86400000));
+    case "month":
+      return monthPeriodOf(new Date(Date.UTC(y, s.getUTCMonth() + delta, 1)));
+    case "quarter":
+      return quarterPeriodOf(new Date(Date.UTC(y, s.getUTCMonth() + delta * 3, 1)));
+    case "half":
+      return halfPeriodOf(new Date(Date.UTC(y, s.getUTCMonth() + delta * 6, 1)));
+    case "year":
+      return yearPeriod(y + delta);
+  }
 }
 
 /** All calendar days in a period. */

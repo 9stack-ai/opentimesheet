@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { atLeastManager } from "@/lib/roles";
 import { approvedEntriesForPeriod } from "@/lib/reporting-db";
 import { billingByClient } from "@/lib/reporting";
-import { monthPeriod, monthPeriodFromString, weekPeriodFromString, type Period } from "@/lib/period";
+import { resolvePeriodFromQuery } from "@/lib/period";
 import { nowSaigon } from "@/lib/clock";
 import { toCsv } from "@/lib/csv";
 
@@ -13,15 +13,7 @@ export async function GET(req: NextRequest) {
     return new Response("Forbidden", { status: 403 });
   }
 
-  const now = nowSaigon();
-  const fallback = monthPeriod(now.getUTCFullYear(), now.getUTCMonth() + 1);
-  const week = req.nextUrl.searchParams.get("week");
-  const month = req.nextUrl.searchParams.get("month");
-
-  let period: Period;
-  if (week) period = weekPeriodFromString(week) ?? fallback;
-  else if (month) period = monthPeriodFromString(month) ?? fallback;
-  else period = fallback;
+  const period = resolvePeriodFromQuery(req.nextUrl.searchParams, nowSaigon());
 
   const clients = billingByClient(await approvedEntriesForPeriod(period));
   const rows: (string | number)[][] = [];
