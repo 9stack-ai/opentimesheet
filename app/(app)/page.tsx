@@ -32,9 +32,9 @@ async function ManagerCharts({ period }: { period: Period }) {
   return (
     <>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi label={`Doanh thu (${period.label})`} value={formatVnd(kpis.revenue)} />
-        <Kpi label={`Chi trả CTV (${period.label})`} value={formatVnd(kpis.payout)} />
-        <Kpi label={`Lợi nhuận (${period.label})`} value={formatVnd(kpis.net)} />
+        <Kpi label={`Nguồn thu (${period.label})`} value={formatVnd(kpis.income)} />
+        <Kpi label={`Số dư thực tế (${period.label})`} value={formatVnd(kpis.actualNet)} />
+        <Kpi label={`Số dư dự kiến (${period.label})`} value={formatVnd(kpis.projectedNet)} />
         <Kpi label="Dự án đang chạy" value={String(kpis.activeProjects)} />
       </div>
       <FinanceChartCard data={finance} />

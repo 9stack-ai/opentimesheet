@@ -23,9 +23,9 @@ import { formatVnd } from "@/lib/money";
 type Point = { label: string; revenue: number; cost: number; net: number };
 
 const config = {
-  revenue: { label: "Doanh thu", color: "var(--chart-2)" },
-  cost: { label: "Chi phí", color: "var(--chart-5)" },
-  net: { label: "Lợi nhuận", color: "var(--chart-1)" },
+  revenue: { label: "Nguồn thu", color: "var(--chart-2)" },
+  cost: { label: "Chi thực", color: "var(--chart-5)" },
+  net: { label: "Số dư", color: "var(--chart-1)" },
 } satisfies ChartConfig;
 
 const RANGES = [
@@ -42,8 +42,8 @@ export function FinanceChartCard({ data }: { data: Point[] }) {
     <Card>
       <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:space-y-0">
         <div className="space-y-1">
-          <CardTitle className="text-base">Doanh thu · Chi phí · Lợi nhuận</CardTitle>
-          <CardDescription>Theo tháng, dựa trên giờ công đã duyệt + chi phí.</CardDescription>
+          <CardTitle className="text-base">Nguồn thu · Chi thực · Số dư</CardTitle>
+          <CardDescription>Theo tháng, dựa trên tiền thực vào/ra (Nguồn thu &amp; Thực chi).</CardDescription>
         </div>
         <Select value={range} onValueChange={setRange}>
           <SelectTrigger className="w-[160px]" aria-label="Khoảng thời gian">

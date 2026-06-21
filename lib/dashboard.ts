@@ -1,12 +1,16 @@
 import { prisma } from "@/lib/db";
 import { nowSaigon } from "@/lib/clock";
 import { monthPeriod, type Period } from "@/lib/period";
-import { profitabilityForPeriod } from "@/lib/profitability-db";
-import { approvedEntriesForPeriod } from "@/lib/reporting-db";
+import { financeOverview } from "@/lib/finance-overview";
 
 export type FinancePoint = { label: string; revenue: number; cost: number; net: number };
 export type HoursPoint = { label: string; hours: number };
-export type ManagerKpis = { revenue: number; payout: number; net: number; activeProjects: number };
+export type ManagerKpis = {
+  income: number; // Nguồn thu
+  actualNet: number; // Số dư thực tế (Nguồn thu − Thực chi − Chi phí)
+  projectedNet: number; // Số dư dự kiến (sau tạm tính lương)
+  activeProjects: number;
+};
 
 function lastNMonths(n: number): { year: number; month: number; label: string }[] {
   const now = nowSaigon();
@@ -25,28 +29,34 @@ function lastNMonths(n: number): { year: number; month: number; label: string }[
   return out;
 }
 
-/** Last N months of company revenue / total cost / net (for the manager finance chart). */
+/** Last N months of actual cash flow (Nguồn thu / Chi thực / Số dư) for the manager chart. */
 export async function managerMonthlyFinance(n = 6): Promise<FinancePoint[]> {
   const months = lastNMonths(n);
   return Promise.all(
     months.map(async (mo) => {
-      const p = await profitabilityForPeriod(monthPeriod(mo.year, mo.month));
-      const revenue = p.company.revenue;
-      const net = p.company.net;
-      return { label: mo.label, revenue, cost: revenue - net, net };
+      const f = await financeOverview(monthPeriod(mo.year, mo.month));
+      return {
+        label: mo.label,
+        revenue: f.income,
+        cost: f.disbursed + f.expenseTotal,
+        net: f.actualNet,
+      };
     }),
   );
 }
 
-/** KPIs for managers over the given period. */
+/** KPIs for managers over the given period — from the cash model (Nguồn thu / Thực chi / tạm tính). */
 export async function managerKpis(period: Period): Promise<ManagerKpis> {
-  const [p, entries, activeProjects] = await Promise.all([
-    profitabilityForPeriod(period),
-    approvedEntriesForPeriod(period),
+  const [f, activeProjects] = await Promise.all([
+    financeOverview(period),
     prisma.project.count({ where: { status: "ACTIVE" } }),
   ]);
-  const payout = Math.round(entries.reduce((s, e) => s + e.hours * e.costRateSnapshot, 0));
-  return { revenue: p.company.revenue, payout, net: p.company.net, activeProjects };
+  return {
+    income: f.income,
+    actualNet: f.actualNet,
+    projectedNet: f.projectedNet,
+    activeProjects,
+  };
 }
 
 /** Last N months of approved hours for a freelancer. */
