@@ -36,6 +36,7 @@ model User {
   assignments         Assignment[]
   timeEntries         TimeEntry[]
   disbursements       Disbursement[]
+  compensations       Compensation[]
   workSession         WorkSession?
   inviteToken         InviteToken?
   createdAt           DateTime     @default(now())
@@ -203,6 +204,26 @@ model InviteToken {
   usedAt    DateTime?
   user      User      @relation(fields: [userId], references: [id])
   createdAt DateTime  @default(now())
+}
+
+// Lịch sử lương theo khoảng ngày. kind=HOURLY → costRate/billableRate (VND/giờ); kind=FIXED →
+// fixedMonthlySalary (VND/tháng). effectiveTo null = đang hiệu lực. Snapshot lúc duyệt chọn period
+// phủ ngày của dòng công; lương cố định cộng theo period FIXED đang hiệu lực từng tháng.
+model Compensation {
+  id                    String    @id @default(cuid())
+  userId                String
+  effectiveFrom         DateTime
+  effectiveTo           DateTime?
+  kind                  String    @default("HOURLY") // HOURLY | FIXED
+  costRate              Int       @default(0)
+  billableRate          Int       @default(0)
+  fixedMonthlySalary    Int       @default(0)
+  taxWithholdingRateBps Int       @default(0)
+  employerCostRateBps   Int       @default(0)
+  user                  User      @relation(fields: [userId], references: [id])
+  createdAt             DateTime  @default(now())
+
+  @@index([userId, effectiveFrom])
 }
 
 // Phiên làm việc đang chạy của CTV (start/stop). @@unique([userId]) → tối đa 1 phiên mở/người.

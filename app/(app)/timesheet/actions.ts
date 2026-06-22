@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/rbac";
 import { recordAudit } from "@/lib/audit";
 import { timeEntrySchema } from "@/lib/validation";
-import { effectiveRates } from "@/lib/rates";
+import { snapshotRatesForEntry } from "@/lib/compensation-db";
 import { resolveTargetUserId, canModifyEntry } from "@/lib/timesheet-access";
 
 /** A user may only log against a task in a project they are assigned to. */
@@ -29,42 +29,10 @@ async function isActiveUser(userId: string): Promise<boolean> {
  * Recompute the frozen rate snapshot for an APPROVED entry that ADMIN edits, so payout/billing/
  * profitability reports stay internally consistent with the entry's (possibly changed) task & owner.
  */
-async function snapshotForApproved(
-  ownerId: string,
-  taskId: string,
-): Promise<
-  | {
-      costRateSnapshot: number;
-      billableRateSnapshot: number;
-      taxRateSnapshot: number;
-      employerCostRateSnapshot: number;
-    }
-  | undefined
-> {
+async function snapshotForApproved(ownerId: string, taskId: string, date: Date) {
   const task = await prisma.task.findUnique({ where: { id: taskId }, select: { projectId: true } });
   if (!task) return undefined;
-  const [owner, assignment] = await Promise.all([
-    prisma.user.findUniqueOrThrow({
-      where: { id: ownerId },
-      select: {
-        defaultCostRate: true,
-        defaultBillableRate: true,
-        taxWithholdingRateBps: true,
-        employerCostRateBps: true,
-      },
-    }),
-    prisma.assignment.findUnique({
-      where: { projectId_userId: { projectId: task.projectId, userId: ownerId } },
-      select: { costRateOverride: true, billableRateOverride: true },
-    }),
-  ]);
-  const rates = effectiveRates(assignment, owner);
-  return {
-    costRateSnapshot: rates.costRate,
-    billableRateSnapshot: rates.billableRate,
-    taxRateSnapshot: owner.taxWithholdingRateBps,
-    employerCostRateSnapshot: owner.employerCostRateBps,
-  };
+  return snapshotRatesForEntry(ownerId, task.projectId, date);
 }
 
 export async function createEntry(formData: FormData) {
@@ -117,7 +85,7 @@ export async function updateEntry(formData: FormData) {
   // Editing an already-APPROVED entry re-freezes its rate snapshot (ADMIN-only path).
   const snapshot =
     existing.status === "APPROVED"
-      ? await snapshotForApproved(existing.userId, parsed.data.taskId)
+      ? await snapshotForApproved(existing.userId, parsed.data.taskId, new Date(parsed.data.date))
       : undefined;
 
   await prisma.timeEntry.update({

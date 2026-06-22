@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireManager } from "@/lib/rbac";
 import { recordAudit } from "@/lib/audit";
-import { effectiveRates } from "@/lib/rates";
+import { snapshotRatesForEntry } from "@/lib/compensation-db";
 import { nowSaigon } from "@/lib/clock";
 import { pushApprovedEntries, retryPush } from "@/lib/redmine/push";
 
@@ -20,7 +20,7 @@ export async function approveEntries(formData: FormData) {
 
   const entries = await prisma.timeEntry.findMany({
     where: { id: { in: ids }, status: "SUBMITTED" },
-    select: { id: true, userId: true, task: { select: { projectId: true } } },
+    select: { id: true, userId: true, date: true, task: { select: { projectId: true } } },
   });
   if (entries.length === 0) return;
 
@@ -28,34 +28,12 @@ export async function approveEntries(formData: FormData) {
 
   await prisma.$transaction(async (tx) => {
     for (const e of entries) {
-      const [user, assignment] = await Promise.all([
-        tx.user.findUniqueOrThrow({
-          where: { id: e.userId },
-          select: {
-            defaultCostRate: true,
-            defaultBillableRate: true,
-            taxWithholdingRateBps: true,
-            employerCostRateBps: true,
-          },
-        }),
-        tx.assignment.findUnique({
-          where: { projectId_userId: { projectId: e.task.projectId, userId: e.userId } },
-          select: { costRateOverride: true, billableRateOverride: true },
-        }),
-      ]);
-      const rates = effectiveRates(assignment, user);
+      // Freeze the rates effective on the entry's DATE (compensation period) — a later rate change
+      // doesn't touch this entry. Reads use the base client; only the write stays in the transaction.
+      const snap = await snapshotRatesForEntry(e.userId, e.task.projectId, e.date);
       await tx.timeEntry.update({
         where: { id: e.id },
-        data: {
-          status: "APPROVED",
-          costRateSnapshot: rates.costRate,
-          billableRateSnapshot: rates.billableRate,
-          // Freeze the owner's tax rates too, so payout/finance stay stable if rates change later.
-          taxRateSnapshot: user.taxWithholdingRateBps,
-          employerCostRateSnapshot: user.employerCostRateBps,
-          approvedById: manager.id,
-          approvedAt,
-        },
+        data: { status: "APPROVED", ...snap, approvedById: manager.id, approvedAt },
       });
     }
   });

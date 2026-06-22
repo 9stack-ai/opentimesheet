@@ -11,4 +11,17 @@ export type UserRow = {
   taxWithholdingRateBps: number;
   employerCostRateBps: number;
   fixedMonthlySalary: number;
+  compensations: CompRow[];
+};
+
+export type CompRow = {
+  id: string;
+  kind: string; // HOURLY | FIXED
+  effectiveFrom: string; // YYYY-MM-DD
+  effectiveTo: string | null;
+  costRate: number;
+  billableRate: number;
+  fixedMonthlySalary: number;
+  taxWithholdingRateBps: number;
+  employerCostRateBps: number;
 };

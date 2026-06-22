@@ -12,6 +12,7 @@ import {
 import { createInviteToken, hashVerifier } from "@/lib/auth-tokens";
 import { hashPassword } from "@/lib/password";
 import { percentToBps } from "@/lib/payroll";
+import { syncCurrentCompensation } from "@/lib/compensation-db";
 import { recordAudit } from "@/lib/audit";
 
 const INVITE_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
@@ -33,7 +34,7 @@ export async function createUserWithPassword(
   if (existing) return { ok: false, message: "Email này đã tồn tại." };
 
   const passwordHash = await hashPassword(data.password);
-  await prisma.user.create({
+  const created = await prisma.user.create({
     data: {
       name: data.name,
       email: data.email,
@@ -48,6 +49,13 @@ export async function createUserWithPassword(
       passwordHash,
       mustChangePassword: true, // admin-set initial password → user changes it on first login
     },
+  });
+  await syncCurrentCompensation(created.id, {
+    defaultCostRate: data.defaultCostRate,
+    defaultBillableRate: data.defaultBillableRate,
+    fixedMonthlySalary: data.fixedMonthlySalary,
+    taxWithholdingRateBps: percentToBps(data.taxWithholdingPercent),
+    employerCostRateBps: percentToBps(data.employerCostPercent),
   });
 
   await recordAudit(admin, "user.create", `Tạo tài khoản ${data.email} (${data.role})`);
@@ -102,7 +110,7 @@ export async function inviteUser(_prev: InviteResult | undefined, formData: Form
   const { selector, verifier, linkToken } = createInviteToken();
   const tokenHash = await hashVerifier(verifier);
 
-  await prisma.user.create({
+  const created = await prisma.user.create({
     data: {
       name: data.name,
       email: data.email,
@@ -118,6 +126,13 @@ export async function inviteUser(_prev: InviteResult | undefined, formData: Form
         create: { selector, tokenHash, expiresAt: new Date(Date.now() + INVITE_TTL_MS) },
       },
     },
+  });
+  await syncCurrentCompensation(created.id, {
+    defaultCostRate: data.defaultCostRate,
+    defaultBillableRate: data.defaultBillableRate,
+    fixedMonthlySalary: data.fixedMonthlySalary,
+    taxWithholdingRateBps: percentToBps(data.taxWithholdingPercent),
+    employerCostRateBps: percentToBps(data.employerCostPercent),
   });
 
   await recordAudit(admin, "user.invite", `Mời tài khoản ${data.email} (${data.role})`);
@@ -146,6 +161,14 @@ export async function updateUser(formData: FormData): Promise<void> {
       taxWithholdingRateBps: percentToBps(taxWithholdingPercent),
       employerCostRateBps: percentToBps(employerCostPercent),
     },
+  });
+  // Keep the current compensation period aligned with the edited defaults.
+  await syncCurrentCompensation(id, {
+    defaultCostRate: rest.defaultCostRate,
+    defaultBillableRate: rest.defaultBillableRate,
+    fixedMonthlySalary: rest.fixedMonthlySalary,
+    taxWithholdingRateBps: percentToBps(taxWithholdingPercent),
+    employerCostRateBps: percentToBps(employerCostPercent),
   });
   await recordAudit(admin, "user.update", `Sửa tài khoản ${rest.email} (${rest.role})`, {
     type: "User",

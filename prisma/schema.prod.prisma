@@ -33,6 +33,7 @@ model User {
   assignments         Assignment[]
   timeEntries         TimeEntry[]
   disbursements       Disbursement[]
+  compensations       Compensation[]
   workSession         WorkSession?
   inviteToken         InviteToken?
   createdAt           DateTime     @default(now())
@@ -199,6 +200,23 @@ model InviteToken {
 }
 
 // Phiên làm việc đang chạy của CTV (start/stop). userId @unique → tối đa 1 phiên mở/người.
+model Compensation {
+  id                    String    @id @default(cuid())
+  userId                String
+  effectiveFrom         DateTime
+  effectiveTo           DateTime?
+  kind                  String    @default("HOURLY")
+  costRate              Int       @default(0)
+  billableRate          Int       @default(0)
+  fixedMonthlySalary    Int       @default(0)
+  taxWithholdingRateBps Int       @default(0)
+  employerCostRateBps   Int       @default(0)
+  user                  User      @relation(fields: [userId], references: [id])
+  createdAt             DateTime  @default(now())
+
+  @@index([userId, effectiveFrom])
+}
+
 model WorkSession {
   id        String   @id @default(cuid())
   userId    String   @unique

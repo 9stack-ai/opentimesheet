@@ -4,6 +4,7 @@
 export type ApprovedEntry = {
   userId: string;
   userName: string;
+  date: Date;
   hours: number;
   costRateSnapshot: number;
   billableRateSnapshot: number;

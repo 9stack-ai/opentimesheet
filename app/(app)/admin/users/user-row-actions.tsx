@@ -25,6 +25,7 @@ import { ROLES } from "@/lib/roles";
 import { roleLabel } from "@/lib/labels";
 import { bpsToPercent } from "@/lib/payroll";
 import { updateUser, setUserStatus, adminSetPassword, type SetPasswordResult } from "./actions";
+import { ManageCompensationDialog } from "./manage-compensation-dialog";
 import type { UserRow } from "./types";
 
 const selectClass =
@@ -33,6 +34,7 @@ const selectClass =
 export function UserRowActions({ user }: { user: UserRow }) {
   const [editOpen, setEditOpen] = React.useState(false);
   const [passwordOpen, setPasswordOpen] = React.useState(false);
+  const [compOpen, setCompOpen] = React.useState(false);
   const [pwState, pwAction, pwPending] = useActionState<SetPasswordResult | undefined, FormData>(
     adminSetPassword,
     undefined,
@@ -56,6 +58,14 @@ export function UserRowActions({ user }: { user: UserRow }) {
             }}
           >
             Sửa
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={(e) => {
+              e.preventDefault();
+              setCompOpen(true);
+            }}
+          >
+            Lịch sử lương
           </DropdownMenuItem>
           <DropdownMenuItem
             onSelect={(e) => {
@@ -204,6 +214,8 @@ export function UserRowActions({ user }: { user: UserRow }) {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ManageCompensationDialog user={user} open={compOpen} onOpenChange={setCompOpen} />
     </div>
   );
 }

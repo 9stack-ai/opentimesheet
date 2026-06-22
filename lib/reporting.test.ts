@@ -12,6 +12,7 @@ function entry(p: Partial<ApprovedEntry>): ApprovedEntry {
   return {
     userId: "u1",
     userName: "A",
+    date: new Date("2026-06-01"),
     hours: 1,
     costRateSnapshot: 100000,
     billableRateSnapshot: 200000,

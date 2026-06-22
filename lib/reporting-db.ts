@@ -14,6 +14,7 @@ export async function approvedEntriesForPeriod(period: Period): Promise<Approved
   return rows.map((e) => ({
     userId: e.userId,
     userName: e.user.name,
+    date: e.date,
     hours: Number(e.hours),
     costRateSnapshot: e.costRateSnapshot ?? 0,
     billableRateSnapshot: e.billableRateSnapshot ?? 0,

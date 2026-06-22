@@ -161,6 +161,19 @@ export const fixedCostSchema = z.object({
   effectiveTo: optionalDateString,
 });
 
+// A dated compensation period (rate or fixed salary) for a user.
+export const compensationSchema = z.object({
+  userId: z.string().min(1),
+  kind: z.enum(["HOURLY", "FIXED"]),
+  effectiveFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  effectiveTo: optionalDateString,
+  costRate: z.coerce.number().int().min(0).default(0),
+  billableRate: z.coerce.number().int().min(0).default(0),
+  fixedMonthlySalary: z.coerce.number().int().min(0).default(0),
+  taxWithholdingPercent: taxPercent,
+  employerCostPercent: taxPercent,
+});
+
 export const redmineConnectSchema = z.object({
   apiKey: z.string().min(1).max(200),
 });
