@@ -38,7 +38,8 @@ export function buildEntryColumns(
     {
       accessorKey: "hours",
       header: ({ column }) => <ColumnHeader column={column} title="Số giờ" />,
-      cell: ({ row }) => row.original.hours,
+      // Display rounded to 2 decimals; the edit dialog keeps the raw value.
+      cell: ({ row }) => Math.round(Number(row.original.hours) * 100) / 100,
     },
     {
       accessorKey: "status",
