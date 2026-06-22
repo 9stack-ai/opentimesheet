@@ -4,7 +4,7 @@ import { effectiveRates } from "@/lib/rates";
 import { formatVnd } from "@/lib/money";
 import { formatISODate } from "@/lib/period";
 import { approveEntries, rejectEntries, retryRedminePush } from "./actions";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -105,12 +105,12 @@ export default async function ApprovalsPage() {
               placeholder="Lý do từ chối (tuỳ chọn)"
               className="w-64"
             />
-            <Button type="submit" formAction={approveEntries}>
+            <SubmitButton formAction={approveEntries} pendingText="Đang duyệt…">
               Duyệt mục đã chọn
-            </Button>
-            <Button type="submit" formAction={rejectEntries} variant="outline" className="border-destructive text-destructive hover:bg-destructive/10">
+            </SubmitButton>
+            <SubmitButton formAction={rejectEntries} variant="outline" className="border-destructive text-destructive hover:bg-destructive/10" pendingText="Đang xử lý…">
               Từ chối mục đã chọn
-            </Button>
+            </SubmitButton>
           </div>
         </form>
       )}
@@ -139,9 +139,9 @@ export default async function ApprovalsPage() {
                   ) : null}
                   <form action={retryRedminePush} className="ml-auto">
                     <input type="hidden" name="entryId" value={e.id} />
-                    <Button type="submit" size="sm" variant="outline">
+                    <SubmitButton size="sm" variant="outline" pendingText="Đang đẩy…">
                       Đẩy lại
-                    </Button>
+                    </SubmitButton>
                   </form>
                 </li>
               ))}

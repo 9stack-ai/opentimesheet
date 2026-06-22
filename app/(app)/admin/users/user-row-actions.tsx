@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { ROLES } from "@/lib/roles";
 import { roleLabel } from "@/lib/labels";
 import { bpsToPercent } from "@/lib/payroll";
@@ -151,7 +152,7 @@ export function UserRowActions({ user }: { user: UserRow }) {
                   Huỷ
                 </Button>
               </DialogClose>
-              <Button type="submit">Lưu</Button>
+              <SubmitButton>Lưu</SubmitButton>
             </DialogFooter>
           </form>
         </DialogContent>

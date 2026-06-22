@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { deleteClient } from "../actions";
 import { deleteProject } from "../../projects/actions";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProjectStatusBadge } from "@/components/status-badge";
 import { EditClientDialog } from "./edit-client-dialog";
@@ -68,9 +68,9 @@ export default async function ClientDetailPage({
                       <form action={deleteProject}>
                         <input type="hidden" name="id" value={p.id} />
                         <input type="hidden" name="clientId" value={client.id} />
-                        <Button type="submit" variant="ghost" size="sm" className="text-destructive">
+                        <SubmitButton variant="ghost" size="sm" className="text-destructive">
                           Xoá
-                        </Button>
+                        </SubmitButton>
                       </form>
                     ) : null}
                   </div>
@@ -86,9 +86,9 @@ export default async function ClientDetailPage({
           <CardContent className="pt-6">
             <form action={deleteClient} className="flex items-center gap-3">
               <input type="hidden" name="id" value={client.id} />
-              <Button type="submit" variant="destructive" size="sm">
+              <SubmitButton variant="destructive" size="sm">
                 Xoá khách hàng
-              </Button>
+              </SubmitButton>
               <span className="text-sm text-muted-foreground">Chỉ xoá được khi chưa có dự án.</span>
             </form>
           </CardContent>

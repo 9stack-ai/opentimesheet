@@ -163,9 +163,9 @@ export function WorkSessionCard({
           </Dialog>
 
           <form action={cancelSession}>
-            <Button type="submit" variant="ghost" size="sm" className="text-muted-foreground">
+            <SubmitButton variant="ghost" size="sm" className="text-muted-foreground" pendingText="Đang huỷ…">
               <X className="size-4" /> Huỷ
-            </Button>
+            </SubmitButton>
           </form>
         </div>
       </CardContent>

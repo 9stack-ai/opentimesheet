@@ -13,7 +13,7 @@ import {
   setProjectRedmineId,
   deleteProject,
 } from "../actions";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProjectStatusBadge } from "@/components/status-badge";
@@ -90,9 +90,9 @@ export default async function ProjectDetailPage({
               name="status"
               value={project.status === "ARCHIVED" ? "ACTIVE" : "ARCHIVED"}
             />
-            <Button type="submit" variant="outline" size="sm">
+            <SubmitButton variant="outline" size="sm">
               {project.status === "ARCHIVED" ? "Bỏ lưu trữ" : "Lưu trữ"}
-            </Button>
+            </SubmitButton>
           </form>
         </div>
       </div>
@@ -105,9 +105,7 @@ export default async function ProjectDetailPage({
           <form action={renameProject} className="flex items-end gap-2">
             <input type="hidden" name="id" value={project.id} />
             <Input name="name" defaultValue={project.name} className="w-64" />
-            <Button type="submit" variant="outline">
-              Lưu
-            </Button>
+            <SubmitButton variant="outline">Lưu</SubmitButton>
           </form>
         </CardContent>
       </Card>
@@ -145,9 +143,7 @@ export default async function ProjectDetailPage({
                   ))}
                 </select>
               </div>
-              <Button type="submit" variant="outline">
-                Lưu
-              </Button>
+              <SubmitButton variant="outline">Lưu</SubmitButton>
             </form>
           ) : (
             <form action={setProjectRedmineId} className="flex flex-col gap-2">
@@ -167,9 +163,7 @@ export default async function ProjectDetailPage({
                     placeholder="vd: 42"
                   />
                 </div>
-                <Button type="submit" variant="outline">
-                  Lưu
-                </Button>
+                <SubmitButton variant="outline">Lưu</SubmitButton>
               </div>
               <p className="text-xs text-muted-foreground">
                 {!redmineConfigured
@@ -202,9 +196,9 @@ export default async function ProjectDetailPage({
                       <form action={deleteTask}>
                         <input type="hidden" name="id" value={t.id} />
                         <input type="hidden" name="projectId" value={project.id} />
-                        <Button type="submit" variant="ghost" size="sm" className="text-destructive">
+                        <SubmitButton variant="ghost" size="sm" className="text-destructive">
                           Xoá
-                        </Button>
+                        </SubmitButton>
                       </form>
                     ) : (
                       <span className="text-muted-foreground">{t._count.timeEntries} mục công</span>
@@ -248,9 +242,9 @@ export default async function ProjectDetailPage({
                     <form action={removeAssignment}>
                       <input type="hidden" name="id" value={a.id} />
                       <input type="hidden" name="projectId" value={project.id} />
-                      <Button type="submit" variant="ghost" size="sm" className="text-destructive">
+                      <SubmitButton variant="ghost" size="sm" className="text-destructive">
                         Xoá
-                      </Button>
+                      </SubmitButton>
                     </form>
                   </div>
                 </li>
@@ -266,9 +260,9 @@ export default async function ProjectDetailPage({
             <form action={deleteProject} className="flex items-center gap-3">
               <input type="hidden" name="id" value={project.id} />
               <input type="hidden" name="clientId" value={project.clientId} />
-              <Button type="submit" variant="destructive" size="sm">
+              <SubmitButton variant="destructive" size="sm">
                 Xoá dự án
-              </Button>
+              </SubmitButton>
               <span className="text-sm text-muted-foreground">
                 Xoá cả hạng mục &amp; phân công; chi phí gắn dự án chuyển về cấp công ty.
               </span>

@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { updateClient } from "../actions";
 
 type Client = {
@@ -74,7 +75,7 @@ export function EditClientDialog({ client }: { client: Client }) {
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Huỷ
             </Button>
-            <Button type="submit">Lưu</Button>
+            <SubmitButton>Lưu</SubmitButton>
           </div>
         </form>
       </DialogContent>

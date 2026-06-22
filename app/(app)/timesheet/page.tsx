@@ -4,7 +4,7 @@ import { formatISODate, resolvePeriod, type PeriodSearchParams } from "@/lib/per
 import { nowSaigon } from "@/lib/clock";
 import { formatVnd } from "@/lib/money";
 import { lifetimeBalanceForUser } from "@/lib/disbursement-db";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PeriodNav } from "@/components/reports/period-nav";
 import { submitPeriod } from "./actions";
@@ -233,7 +233,7 @@ export default async function TimesheetPage({
           <input type="hidden" name="start" value={period.start.toISOString()} />
           <input type="hidden" name="end" value={period.end.toISOString()} />
           {isAdmin ? <input type="hidden" name="targetUserId" value={targetUserId} /> : null}
-          <Button type="submit">Gửi duyệt kỳ {period.label}</Button>
+          <SubmitButton pendingText="Đang gửi…">Gửi duyệt kỳ {period.label}</SubmitButton>
           <span className="text-xs text-muted-foreground">Sẽ khoá tất cả dòng nháp trong kỳ.</span>
         </form>
       ) : null}

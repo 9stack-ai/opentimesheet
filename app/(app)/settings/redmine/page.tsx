@@ -1,7 +1,7 @@
 import { requireUser } from "@/lib/rbac";
 import { prisma } from "@/lib/db";
 import { formatISODate } from "@/lib/period";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RedmineConnectForm } from "./redmine-connect-form";
 import { disconnectRedmine } from "./actions";
@@ -44,9 +44,7 @@ export default async function RedmineSettingsPage() {
               {u!.redmineConnectedAt ? ` · từ ${formatISODate(u!.redmineConnectedAt)}` : ""}
             </span>
             <form action={disconnectRedmine}>
-              <Button type="submit" variant="outline">
-                Ngắt kết nối
-              </Button>
+              <SubmitButton variant="outline">Ngắt kết nối</SubmitButton>
             </form>
           </CardContent>
         </Card>

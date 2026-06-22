@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { updateEntry, deleteEntry } from "./actions";
 import type { EntryRow } from "./entries-table";
 
@@ -143,7 +144,7 @@ export function EntryRowActions({
                   Huỷ
                 </Button>
               </DialogClose>
-              <Button type="submit">Lưu</Button>
+              <SubmitButton>Lưu</SubmitButton>
             </DialogFooter>
           </form>
         </DialogContent>

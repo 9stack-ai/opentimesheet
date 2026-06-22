@@ -170,10 +170,13 @@ export async function submitPeriod(formData: FormData) {
     },
     data: { status: "SUBMITTED" },
   });
-  await recordAudit(
-    actor,
-    "timeentry.submit",
-    `Gửi duyệt ${res.count} công (${start.slice(0, 10)} → ${end.slice(0, 10)})${targetUserId !== actor.id ? " (hộ)" : ""}`,
-  );
+  // Only audit a real change — a re-submit that matches 0 draft rows shouldn't spam the log.
+  if (res.count > 0) {
+    await recordAudit(
+      actor,
+      "timeentry.submit",
+      `Gửi duyệt ${res.count} công (${start.slice(0, 10)} → ${end.slice(0, 10)})${targetUserId !== actor.id ? " (hộ)" : ""}`,
+    );
+  }
   revalidatePath("/timesheet");
 }
