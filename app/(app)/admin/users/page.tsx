@@ -13,6 +13,7 @@ export default async function UsersPage() {
       contactEmail: true,
       role: true,
       status: true,
+      mustChangePassword: true,
       defaultCostRate: true,
       defaultBillableRate: true,
       taxWithholdingRateBps: true,

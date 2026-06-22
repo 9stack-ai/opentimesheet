@@ -1,11 +1,22 @@
 import type { ReactNode } from "react";
 import { requireUser } from "@/lib/rbac";
+import { prisma } from "@/lib/db";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
+import { ForcedPasswordChange } from "./forced-password-change";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const user = await requireUser();
+
+  // Force a password change (e.g. after admin reset) before any app screen is usable.
+  const dbUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { mustChangePassword: true },
+  });
+  if (dbUser?.mustChangePassword) {
+    return <ForcedPasswordChange name={user.name ?? "bạn"} />;
+  }
 
   return (
     <SidebarProvider>

@@ -45,6 +45,7 @@ export async function createUserWithPassword(
       taxWithholdingRateBps: percentToBps(data.taxWithholdingPercent),
       employerCostRateBps: percentToBps(data.employerCostPercent),
       passwordHash,
+      mustChangePassword: true, // admin-set initial password → user changes it on first login
     },
   });
 
@@ -73,7 +74,8 @@ export async function adminSetPassword(
     prisma.user.update({
       where: { id },
       // Promote a pending invitee to ACTIVE; never override a DISABLED account.
-      data: { passwordHash, ...(user.status === "INVITED" ? { status: "ACTIVE" } : {}) },
+      // Force the user to set their own password on next login.
+      data: { passwordHash, mustChangePassword: true, ...(user.status === "INVITED" ? { status: "ACTIVE" } : {}) },
     }),
     // Invalidate any outstanding invite link now that a password exists.
     prisma.inviteToken.deleteMany({ where: { userId: id } }),

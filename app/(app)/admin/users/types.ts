@@ -5,6 +5,7 @@ export type UserRow = {
   contactEmail: string | null;
   role: string;
   status: string;
+  mustChangePassword: boolean;
   defaultCostRate: number;
   defaultBillableRate: number;
   taxWithholdingRateBps: number;

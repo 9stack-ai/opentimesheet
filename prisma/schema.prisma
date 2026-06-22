@@ -20,6 +20,7 @@ model User {
   email               String       @unique // login identifier (username)
   contactEmail        String? // contact email address (separate from login)
   passwordHash        String?
+  mustChangePassword  Boolean      @default(false) // force a password change on next login (e.g. after admin reset)
   role                String       @default("FREELANCER") // ADMIN | MANAGER | EMPLOYEE | FREELANCER
   status              String       @default("INVITED") // ACTIVE | INVITED | DISABLED
   defaultCostRate     Int          @default(0) // VND/hour — what we pay

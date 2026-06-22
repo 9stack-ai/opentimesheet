@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/rbac";
 import { changePasswordSchema } from "@/lib/validation";
@@ -33,7 +34,12 @@ export async function changePassword(
     return { ok: false, message: "Mật khẩu mới phải khác mật khẩu hiện tại." };
   }
 
-  await prisma.user.update({ where: { id: actor.id }, data: { passwordHash: await hashPassword(newPassword) } });
+  await prisma.user.update({
+    where: { id: actor.id },
+    // Clear the force-change flag — changing the password satisfies the requirement.
+    data: { passwordHash: await hashPassword(newPassword), mustChangePassword: false },
+  });
   await recordAudit(actor, "user.password_change", "Tự đổi mật khẩu");
+  revalidatePath("/", "layout"); // drop the forced-change gate rendered by the app layout
   return { ok: true, message: "Đã đổi mật khẩu thành công." };
 }

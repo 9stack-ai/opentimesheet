@@ -19,6 +19,7 @@ model User {
   email               String       @unique // login identifier (username)
   contactEmail        String? // contact email address (separate from login)
   passwordHash        String?
+  mustChangePassword  Boolean      @default(false)
   role                String       @default("FREELANCER") // ADMIN | MANAGER | EMPLOYEE | FREELANCER
   status              String       @default("INVITED") // ACTIVE | INVITED | DISABLED
   defaultCostRate     Int          @default(0)

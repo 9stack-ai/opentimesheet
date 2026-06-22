@@ -2,6 +2,7 @@
 
 import { type ColumnDef } from "@tanstack/react-table";
 import { ColumnHeader } from "@/components/data-table/column-header";
+import { Badge } from "@/components/ui/badge";
 import { UserStatusBadge } from "@/components/status-badge";
 import { roleLabel } from "@/lib/labels";
 import { formatVnd } from "@/lib/money";
@@ -35,6 +36,18 @@ export const userColumns: ColumnDef<UserRow>[] = [
     accessorKey: "status",
     header: "Trạng thái",
     cell: ({ row }) => <UserStatusBadge status={row.original.status} />,
+  },
+  {
+    id: "pwflag",
+    header: "Mật khẩu",
+    cell: ({ row }) =>
+      row.original.mustChangePassword ? (
+        <Badge variant="outline" className="border-amber-200 bg-amber-100 text-amber-800">
+          Phải đổi
+        </Badge>
+      ) : (
+        <span className="text-xs text-muted-foreground">Đã đặt</span>
+      ),
   },
   {
     id: "rates",
