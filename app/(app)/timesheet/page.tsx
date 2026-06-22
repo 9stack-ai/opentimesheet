@@ -88,7 +88,8 @@ export default async function TimesheetPage({
         select: { startedAt: true },
       });
 
-  const totalHours = entries.reduce((sum, e) => sum + Number(e.hours), 0);
+  // Round to 2 decimals so floating-point sums (e.g. 2.62 + 1.5) don't show a long tail.
+  const totalHours = Math.round(entries.reduce((sum, e) => sum + Number(e.hours), 0) * 100) / 100;
   // Net actually received by the person = gross − withheld PIT. Round gross and tax separately
   // (same decomposition as the manager payout report) so both screens show the identical net.
   const approved = entries.filter((e) => e.status === "APPROVED");
@@ -142,13 +143,15 @@ export default async function TimesheetPage({
         />
         {isAdmin ? <UserPicker users={userOptions} value={targetUserId} /> : null}
         {!viewingOther ? <RedmineSyncButton /> : null}
-        <div className="ml-auto flex items-center gap-4 text-sm">
-          <span>
-            Tổng: <span className="font-semibold">{totalHours} giờ</span>
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-baseline gap-1.5 rounded-full bg-primary/10 px-3.5 py-1.5 font-semibold text-primary">
+            <span className="text-base tabular-nums">{totalHours}</span>
+            <span className="text-xs">giờ</span>
           </span>
           {approvedPayout > 0 ? (
-            <span>
-              Đã duyệt (thực nhận): <span className="font-semibold">{formatVnd(approvedPayout)}</span>
+            <span className="inline-flex items-baseline gap-1.5 rounded-full bg-emerald-100 px-3.5 py-1.5 font-semibold text-emerald-700">
+              <span className="text-xs">Thực nhận</span>
+              <span className="text-base tabular-nums">{formatVnd(approvedPayout)}</span>
             </span>
           ) : null}
         </div>
