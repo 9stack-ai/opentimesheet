@@ -6,6 +6,9 @@
 /** Maximum recordable length of a single session (4 hours). */
 export const MAX_SESSION_MS = 4 * 60 * 60 * 1000;
 
+/** Minimum length before a session can be recorded (1 minute). Shorter ends are blocked. */
+export const MIN_SESSION_MS = 60 * 1000;
+
 /**
  * Hours worked in a session = (end − start), capped at 4h, rounded to 2 decimals.
  * `capped` is true when the raw elapsed exceeded 4h (so the UI can warn).

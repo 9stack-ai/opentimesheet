@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MAX_SESSION_MS, sessionHours } from "./work-session";
+import { MAX_SESSION_MS, MIN_SESSION_MS, sessionHours } from "./work-session";
 
 const base = new Date("2026-06-22T01:00:00.000Z");
 const after = (ms: number) => new Date(base.getTime() + ms);
@@ -28,5 +28,9 @@ describe("sessionHours", () => {
 
   it("1 minute → 0.02h", () => {
     expect(sessionHours(base, after(60_000)).hours).toBe(0.02);
+  });
+
+  it("min recordable length is 1 minute", () => {
+    expect(MIN_SESSION_MS).toBe(60_000);
   });
 });

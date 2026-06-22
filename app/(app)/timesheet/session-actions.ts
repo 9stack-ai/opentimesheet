@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/rbac";
 import { recordAudit } from "@/lib/audit";
 import { endSessionSchema } from "@/lib/validation";
-import { sessionHours } from "@/lib/work-session";
+import { sessionHours, MIN_SESSION_MS } from "@/lib/work-session";
 import { now } from "@/lib/clock";
 
 /** Saigon (UTC+7) calendar date of an instant → UTC-midnight Date (matches how entries store `date`). */
@@ -47,12 +47,13 @@ export async function endSession(formData: FormData) {
   await prisma.$transaction(async (tx) => {
     const session = await tx.workSession.findUnique({ where: { userId: actor.id } });
     if (!session) return; // already ended / never started
+    // Too short (< 1 min): do NOT claim/delete — keep the session running so the user can continue.
+    if (endedAt.getTime() - session.startedAt.getTime() < MIN_SESSION_MS) return;
     // Claim-once: deleting the session is the guard — only the call that removes it records the entry,
     // so a double-click / second tab can't create two entries.
     const del = await tx.workSession.deleteMany({ where: { id: session.id } });
     if (del.count !== 1) return;
-    const { hours } = sessionHours(session.startedAt, endedAt);
-    if (hours <= 0) return; // session too short to record (rounds to 0.00h)
+    const { hours } = sessionHours(session.startedAt, endedAt); // ≥ 0.02h (≥ 1 min) by the guard above
     await tx.timeEntry.create({
       data: {
         userId: actor.id,

@@ -18,6 +18,7 @@ import { SubmitButton } from "@/components/ui/submit-button";
 import { startSession, endSession, cancelSession } from "./session-actions";
 
 const MAX_MS = 4 * 60 * 60 * 1000; // 4h
+const MIN_MS = 60 * 1000; // 1 phút — dưới mức này không cho ghi
 const fieldClass =
   "rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none";
 
@@ -73,6 +74,7 @@ export function WorkSessionCard({
 
   const elapsed = Math.max(0, nowMs - Date.parse(activeSince));
   const over = elapsed >= MAX_MS;
+  const tooShort = elapsed < MIN_MS;
   const recordHours = (Math.min(elapsed, MAX_MS) / 3_600_000).toFixed(2);
 
   return (
@@ -136,8 +138,16 @@ export function WorkSessionCard({
                       className={fieldClass}
                     />
                   </div>
-                  <p className={`text-xs ${over ? "text-amber-700" : "text-muted-foreground"}`}>
-                    {over ? "Phiên vượt 4h — chỉ ghi 4h." : `Sẽ ghi ~${recordHours}h (nháp).`}
+                  <p className={`text-xs ${tooShort || over ? "text-amber-700" : "text-muted-foreground"}`}>
+                    {tooShort
+                      ? "Phiên quá ngắn — cần ít nhất 1 phút mới ghi được."
+                      : over
+                        ? "Phiên vượt 4h — chỉ ghi 4h."
+                        : `Sẽ ghi ~${recordHours}h.`}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Lưu xong, công ở trạng thái <span className="font-medium">Nháp</span> — bạn có thể sửa lại
+                    (task, giờ, ghi chú) ở bảng bên dưới rồi mới Gửi duyệt.
                   </p>
                   <DialogFooter>
                     <DialogClose asChild>
@@ -145,7 +155,7 @@ export function WorkSessionCard({
                         Đóng
                       </Button>
                     </DialogClose>
-                    <SubmitButton>Lưu công</SubmitButton>
+                    <SubmitButton disabled={tooShort}>Lưu công</SubmitButton>
                   </DialogFooter>
                 </form>
               )}
