@@ -39,8 +39,14 @@ export default async function DisbursementsPage({
   const withTimesheet = rows.filter((r) => r.owed > 0);
   const offTimesheet = rows.filter((r) => r.owed === 0 && r.paid > 0);
   const totals = withTimesheet.reduce(
-    (s, r) => ({ owed: s.owed + r.owed, paid: s.paid + r.paid, remaining: s.remaining + r.remaining }),
-    { owed: 0, paid: 0, remaining: 0 },
+    (s, r) => ({
+      gross: s.gross + r.gross,
+      tax: s.tax + r.tax,
+      owed: s.owed + r.owed,
+      paid: s.paid + r.paid,
+      remaining: s.remaining + r.remaining,
+    }),
+    { gross: 0, tax: 0, owed: 0, paid: 0, remaining: 0 },
   );
   const offTotal = offTimesheet.reduce((s, r) => s + r.paid, 0);
 
@@ -72,6 +78,8 @@ export default async function DisbursementsPage({
               <tr>
                 <th className="px-3 py-2 text-left font-medium">Người</th>
                 <th className="px-3 py-2 text-left font-medium">Vai trò</th>
+                <th className="px-3 py-2 text-right font-medium">Lương gộp</th>
+                <th className="px-3 py-2 text-right font-medium">Thuế giữ lại</th>
                 <th className="px-3 py-2 text-right font-medium">Phải trả (thực nhận)</th>
                 <th className="px-3 py-2 text-right font-medium">Đã trả</th>
                 <th className="px-3 py-2 text-right font-medium">Còn lại</th>
@@ -80,7 +88,7 @@ export default async function DisbursementsPage({
             <tbody>
               {withTimesheet.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-3 py-6 text-center text-muted-foreground">
+                  <td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">
                     Chưa có lương ghi nhận từ chấm công trong kỳ {period.label}.
                   </td>
                 </tr>
@@ -96,6 +104,8 @@ export default async function DisbursementsPage({
                       </Link>
                     </td>
                     <td className="px-3 py-2 text-muted-foreground">{roleLabel(r.role)}</td>
+                    <td className="px-3 py-2 text-right">{formatVnd(r.gross)}</td>
+                    <td className="px-3 py-2 text-right text-muted-foreground">{formatVnd(r.tax)}</td>
                     <td className="px-3 py-2 text-right">{formatVnd(r.owed)}</td>
                     <td className="px-3 py-2 text-right">{formatVnd(r.paid)}</td>
                     <td
@@ -115,6 +125,8 @@ export default async function DisbursementsPage({
                   <td className="px-3 py-2" colSpan={2}>
                     Tổng
                   </td>
+                  <td className="px-3 py-2 text-right">{formatVnd(totals.gross)}</td>
+                  <td className="px-3 py-2 text-right">{formatVnd(totals.tax)}</td>
                   <td className="px-3 py-2 text-right">{formatVnd(totals.owed)}</td>
                   <td className="px-3 py-2 text-right">{formatVnd(totals.paid)}</td>
                   <td className="px-3 py-2 text-right">{formatVnd(totals.remaining)}</td>

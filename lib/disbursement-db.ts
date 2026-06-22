@@ -7,7 +7,9 @@ export type PayrollRow = {
   userId: string;
   userName: string;
   role: string;
-  owed: number; // net (thực nhận) accrued from approved timesheet in the period
+  gross: number; // lương gộp (trước thuế) từ chấm công đã duyệt trong kỳ
+  tax: number; // thuế TNCN giữ lại trong kỳ
+  owed: number; // net (thực nhận) = gross − tax
   paid: number; // Σ actual disbursements in the period (by payment date)
   remaining: number; // owed − paid
 };
@@ -25,19 +27,22 @@ export async function payrollReconciliation(period: Period): Promise<PayrollRow[
     prisma.user.findMany({ select: { id: true, name: true, role: true } }),
   ]);
 
-  const owedByUser = new Map(payoutByUser(entries).map((r) => [r.userId, r.net]));
+  const payoutByUserId = new Map(payoutByUser(entries).map((r) => [r.userId, r]));
   const paidByUser = new Map(paidAgg.map((p) => [p.userId, p._sum.amount ?? 0]));
   const userInfo = new Map(users.map((u) => [u.id, u]));
 
   const rows: PayrollRow[] = [];
-  for (const id of new Set([...owedByUser.keys(), ...paidByUser.keys()])) {
-    const owed = owedByUser.get(id) ?? 0;
+  for (const id of new Set([...payoutByUserId.keys(), ...paidByUser.keys()])) {
+    const pay = payoutByUserId.get(id);
+    const owed = pay?.net ?? 0;
     const paid = paidByUser.get(id) ?? 0;
     const u = userInfo.get(id);
     rows.push({
       userId: id,
       userName: u?.name ?? "(đã xoá)",
       role: u?.role ?? "",
+      gross: pay?.gross ?? 0,
+      tax: pay?.taxWithheld ?? 0,
       owed,
       paid,
       remaining: owed - paid,
