@@ -11,6 +11,7 @@ import {
   Clock,
   Coins,
   History,
+  KeyRound,
   LayoutDashboard,
   LogOut,
   Plug,
@@ -70,7 +71,10 @@ const ADMIN_ITEMS: Item[] = [
   { href: "/admin/audit", label: "Nhật ký hoạt động", icon: History },
 ];
 // Cài đặt cá nhân — mọi vai trò (Redmine connect là per-user).
-const PERSONAL: Item[] = [{ href: "/settings/redmine", label: "Kết nối Redmine", icon: Plug }];
+const PERSONAL: Item[] = [
+  { href: "/settings/password", label: "Đổi mật khẩu", icon: KeyRound },
+  { href: "/settings/redmine", label: "Kết nối Redmine", icon: Plug },
+];
 
 function NavRow({ item }: { item: Item }) {
   const pathname = usePathname();

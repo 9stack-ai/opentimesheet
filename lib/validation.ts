@@ -52,6 +52,18 @@ export const setPasswordSchema = z.object({
   password: z.string().min(8).max(200),
 });
 
+// Self-service password change (logged-in user; no email/token). Confirms current password.
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1),
+    newPassword: z.string().min(8).max(200),
+    confirmPassword: z.string().min(1),
+  })
+  .refine((d) => d.newPassword === d.confirmPassword, {
+    message: "Mật khẩu xác nhận không khớp.",
+    path: ["confirmPassword"],
+  });
+
 const optionalRate = z.preprocess(
   (v) => (v === "" || v === undefined || v === null ? undefined : v),
   z.coerce.number().int().min(0).optional(),
