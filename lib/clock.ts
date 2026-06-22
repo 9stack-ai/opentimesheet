@@ -6,3 +6,8 @@
 export function nowSaigon(): Date {
   return new Date(Date.now() + 7 * 60 * 60 * 1000);
 }
+
+/** Current instant (true UTC) — for elapsed-time math (e.g. work-session duration). */
+export function now(): Date {
+  return new Date();
+}

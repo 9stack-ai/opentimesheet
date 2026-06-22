@@ -31,6 +31,7 @@ model User {
   assignments         Assignment[]
   timeEntries         TimeEntry[]
   disbursements       Disbursement[]
+  workSession         WorkSession?
   inviteToken         InviteToken?
   createdAt           DateTime     @default(now())
 }
@@ -193,4 +194,13 @@ model InviteToken {
   usedAt    DateTime?
   user      User      @relation(fields: [userId], references: [id])
   createdAt DateTime  @default(now())
+}
+
+// Phiên làm việc đang chạy của CTV (start/stop). userId @unique → tối đa 1 phiên mở/người.
+model WorkSession {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  startedAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
 }

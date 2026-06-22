@@ -87,6 +87,12 @@ export const timeEntrySchema = z.object({
   note: z.string().max(500).optional(),
 });
 
+// Kết thúc phiên làm việc: chỉ nhận task + nội dung; date & hours được suy ra ở server từ phiên.
+export const endSessionSchema = z.object({
+  taskId: z.string().min(1),
+  note: z.string().max(500).optional(),
+});
+
 const optionalString = z.preprocess(
   (v) => (v === "" || v === undefined || v === null ? undefined : v),
   z.string().optional(),

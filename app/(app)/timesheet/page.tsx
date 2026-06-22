@@ -12,6 +12,7 @@ import { EntriesTable } from "./entries-table";
 import type { EntryRow } from "./entries-table";
 import { RedmineSyncButton } from "./redmine-sync-button";
 import { UserPicker } from "./user-picker";
+import { WorkSessionCard } from "./work-session-card";
 
 export const dynamic = "force-dynamic";
 
@@ -78,6 +79,14 @@ export default async function TimesheetPage({
     include: { task: { include: { project: true } } },
     orderBy: [{ date: "asc" }, { createdAt: "asc" }],
   });
+
+  // Live work session — personal only (not shown when an admin logs on behalf of someone else).
+  const activeSession = viewingOther
+    ? null
+    : await prisma.workSession.findUnique({
+        where: { userId: sessionUser.id },
+        select: { startedAt: true },
+      });
 
   const totalHours = entries.reduce((sum, e) => sum + Number(e.hours), 0);
   // Net actually received by the person = gross − withheld PIT. Round gross and tax separately
@@ -149,7 +158,12 @@ export default async function TimesheetPage({
         <p className="-mt-3 text-sm text-muted-foreground">
           Đang chấm công hộ: <span className="font-medium text-foreground">{targetName}</span>
         </p>
-      ) : null}
+      ) : (
+        <WorkSessionCard
+          activeSince={activeSession?.startedAt.toISOString() ?? null}
+          tasks={taskOptions}
+        />
+      )}
 
       {showPay ? (
         <Card>
