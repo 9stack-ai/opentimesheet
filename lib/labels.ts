@@ -5,6 +5,7 @@ export const ROLE_LABEL: Record<string, string> = {
   MANAGER: "Quản lý",
   EMPLOYEE: "Nhân viên chính thức",
   FREELANCER: "Cộng tác viên",
+  INTERN: "Thực tập sinh",
 };
 
 export function roleLabel(role: string): string {

@@ -1,6 +1,6 @@
 // Role union — kept free of Prisma imports so edge middleware can use it.
 // Values match the Prisma `Role` enum exactly.
-export const ROLES = ["ADMIN", "MANAGER", "EMPLOYEE", "FREELANCER"] as const;
+export const ROLES = ["ADMIN", "MANAGER", "EMPLOYEE", "FREELANCER", "INTERN"] as const;
 export type Role = (typeof ROLES)[number];
 
 export function isRole(value: unknown): value is Role {
