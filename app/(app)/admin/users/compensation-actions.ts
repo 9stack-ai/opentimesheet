@@ -45,6 +45,34 @@ export async function addCompensation(formData: FormData) {
   revalidatePath("/admin/users");
 }
 
+/** Edit an existing compensation period in place. */
+export async function updateCompensation(formData: FormData) {
+  const admin = await requireRole(["ADMIN"]);
+  const id = String(formData.get("id"));
+  if (!id) return;
+  const parsed = compensationSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return;
+  const d = parsed.data;
+  await prisma.compensation.update({
+    where: { id },
+    data: {
+      effectiveFrom: new Date(d.effectiveFrom),
+      effectiveTo: d.effectiveTo ? new Date(d.effectiveTo) : null,
+      kind: d.kind,
+      costRate: d.costRate,
+      billableRate: d.billableRate,
+      fixedMonthlySalary: d.fixedMonthlySalary,
+      taxWithholdingRateBps: percentToBps(d.taxWithholdingPercent),
+      employerCostRateBps: percentToBps(d.employerCostPercent),
+    },
+  });
+  await recordAudit(admin, "compensation.update", `Sửa giai đoạn lương ${d.kind}`, {
+    type: "Compensation",
+    id,
+  });
+  revalidatePath("/admin/users");
+}
+
 export async function deleteCompensation(formData: FormData) {
   const admin = await requireRole(["ADMIN"]);
   const id = String(formData.get("id"));
