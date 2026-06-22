@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/db";
 import { formatISODate, type Period } from "@/lib/period";
-import { approvedEntriesForPeriod } from "@/lib/reporting-db";
-import { payoutByUser } from "@/lib/reporting";
+import { payrollByUser } from "@/lib/payroll-accrual";
 
 export type PayrollRow = {
   userId: string;
@@ -17,8 +16,8 @@ export type PayrollRow = {
 /** Reconcile accrued net pay (from approved timesheet) against actual disbursements over
  *  a period (any kind). Both sides filter by date in [start, end). Includes anyone owed OR paid. */
 export async function payrollReconciliation(period: Period): Promise<PayrollRow[]> {
-  const [entries, paidAgg, users] = await Promise.all([
-    approvedEntriesForPeriod(period),
+  const [payByUser, paidAgg, users] = await Promise.all([
+    payrollByUser(period), // hourly timesheet + fixed-salary, merged per user
     prisma.disbursement.groupBy({
       by: ["userId"],
       where: { date: { gte: period.start, lt: period.end } },
@@ -27,13 +26,12 @@ export async function payrollReconciliation(period: Period): Promise<PayrollRow[
     prisma.user.findMany({ select: { id: true, name: true, role: true } }),
   ]);
 
-  const payoutByUserId = new Map(payoutByUser(entries).map((r) => [r.userId, r]));
   const paidByUser = new Map(paidAgg.map((p) => [p.userId, p._sum.amount ?? 0]));
   const userInfo = new Map(users.map((u) => [u.id, u]));
 
   const rows: PayrollRow[] = [];
-  for (const id of new Set([...payoutByUserId.keys(), ...paidByUser.keys()])) {
-    const pay = payoutByUserId.get(id);
+  for (const id of new Set([...payByUser.keys(), ...paidByUser.keys()])) {
+    const pay = payByUser.get(id);
     const owed = pay?.net ?? 0;
     const paid = paidByUser.get(id) ?? 0;
     const u = userInfo.get(id);
@@ -42,7 +40,7 @@ export async function payrollReconciliation(period: Period): Promise<PayrollRow[
       userName: u?.name ?? "(đã xoá)",
       role: u?.role ?? "",
       gross: pay?.gross ?? 0,
-      tax: pay?.taxWithheld ?? 0,
+      tax: pay?.tax ?? 0,
       owed,
       paid,
       remaining: owed - paid,

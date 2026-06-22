@@ -22,6 +22,7 @@ export const inviteUserSchema = z.object({
   defaultBillableRate: z.coerce.number().int().min(0).default(0),
   taxWithholdingPercent: taxPercent,
   employerCostPercent: taxPercent,
+  fixedMonthlySalary: z.coerce.number().int().min(0).default(0),
 });
 
 export const updateUserSchema = z.object({
@@ -34,6 +35,7 @@ export const updateUserSchema = z.object({
   defaultBillableRate: z.coerce.number().int().min(0),
   taxWithholdingPercent: taxPercent,
   employerCostPercent: taxPercent,
+  fixedMonthlySalary: z.coerce.number().int().min(0).default(0),
 });
 
 // Admin creates a user and sets the password directly (active immediately, no invite link).

@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { approvedEntriesForPeriod, fixedCostsTotalForPeriod } from "@/lib/reporting-db";
-import { payoutByUser } from "@/lib/reporting";
+import { payrollByUser } from "@/lib/payroll-accrual";
 import type { Period } from "@/lib/period";
 
 // Thu chi built from three sources:
@@ -26,7 +26,7 @@ export type FinanceOverview = {
 };
 
 export async function financeOverview(period: Period): Promise<FinanceOverview> {
-  const [entries, fixedCost, expenses, incomes, disb] = await Promise.all([
+  const [entries, fixedCost, expenses, incomes, disb, pay] = await Promise.all([
     approvedEntriesForPeriod(period),
     fixedCostsTotalForPeriod(period),
     prisma.expense.findMany({
@@ -42,16 +42,18 @@ export async function financeOverview(period: Period): Promise<FinanceOverview> 
       where: { date: { gte: period.start, lt: period.end } },
       _sum: { amount: true },
     }),
+    payrollByUser(period), // hourly timesheet + fixed-salary, merged per user
   ]);
 
   const income = incomes.reduce((s, i) => s + i.amount, 0);
   const paidByUser = new Map(disb.map((g) => [g.userId, g._sum.amount ?? 0]));
   const disbursed = disb.reduce((s, g) => s + (g._sum.amount ?? 0), 0);
-  const accruedPayout = Math.round(entries.reduce((s, e) => s + e.hours * e.costRateSnapshot, 0));
-  // Đang chờ chi = timesheet NET still owed, per person, clamped ≥ 0 — so a payment to
-  // someone without a timesheet (or an overpayment) doesn't cancel another person's owed.
-  const unpaidPayroll = payoutByUser(entries).reduce(
-    (s, r) => s + Math.max(0, r.net - (paidByUser.get(r.userId) ?? 0)),
+  // Lương phải trả gộp = giờ công đã duyệt + lương cố định (gộp qua payrollByUser).
+  const accruedPayout = [...pay.values()].reduce((s, p) => s + p.gross, 0);
+  // Đang chờ chi = NET còn nợ theo từng người, clamped ≥ 0 — khoản trả cho người không có lương
+  // (hoặc trả dư) không triệt tiêu phần nợ của người khác.
+  const unpaidPayroll = [...pay.entries()].reduce(
+    (s, [uid, p]) => s + Math.max(0, p.net - (paidByUser.get(uid) ?? 0)),
     0,
   );
   const employerInsurance = Math.round(

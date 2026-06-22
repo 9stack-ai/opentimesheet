@@ -146,6 +146,16 @@ export function UserRowActions({ user }: { user: UserRow }) {
                 />
               </div>
             </div>
+            <div className="grid gap-2">
+              <Label>Lương cố định (VND/tháng)</Label>
+              <Input
+                name="fixedMonthlySalary"
+                type="number"
+                min={0}
+                defaultValue={user.fixedMonthlySalary}
+              />
+              <p className="text-xs text-muted-foreground">0 = tính theo giờ; &gt; 0 = ăn lương cố định (bỏ qua giờ).</p>
+            </div>
             <DialogFooter>
               <DialogClose asChild>
                 <Button type="button" variant="outline">

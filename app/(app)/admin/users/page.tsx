@@ -18,6 +18,7 @@ export default async function UsersPage() {
       defaultBillableRate: true,
       taxWithholdingRateBps: true,
       employerCostRateBps: true,
+      fixedMonthlySalary: true,
     },
   });
 

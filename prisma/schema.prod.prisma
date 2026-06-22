@@ -26,6 +26,7 @@ model User {
   defaultBillableRate Int          @default(0)
   taxWithholdingRateBps Int        @default(0)
   employerCostRateBps   Int        @default(0)
+  fixedMonthlySalary  Int          @default(0)
   redmineApiKeyEnc    String?
   redmineUserId       Int?
   redmineConnectedAt  DateTime?

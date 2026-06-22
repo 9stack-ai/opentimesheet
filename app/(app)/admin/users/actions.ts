@@ -44,6 +44,7 @@ export async function createUserWithPassword(
       defaultBillableRate: data.defaultBillableRate,
       taxWithholdingRateBps: percentToBps(data.taxWithholdingPercent),
       employerCostRateBps: percentToBps(data.employerCostPercent),
+      fixedMonthlySalary: data.fixedMonthlySalary,
       passwordHash,
       mustChangePassword: true, // admin-set initial password → user changes it on first login
     },
@@ -112,6 +113,7 @@ export async function inviteUser(_prev: InviteResult | undefined, formData: Form
       defaultBillableRate: data.defaultBillableRate,
       taxWithholdingRateBps: percentToBps(data.taxWithholdingPercent),
       employerCostRateBps: percentToBps(data.employerCostPercent),
+      fixedMonthlySalary: data.fixedMonthlySalary,
       inviteToken: {
         create: { selector, tokenHash, expiresAt: new Date(Date.now() + INVITE_TTL_MS) },
       },

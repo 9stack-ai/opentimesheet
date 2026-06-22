@@ -86,6 +86,10 @@ export function InviteDialog() {
               <Input name="employerCostPercent" type="number" min={0} max={100} step="0.01" placeholder="vd 21.5 (NV)" />
             </div>
           </div>
+          <div className="grid gap-2">
+            <Label>Lương cố định (VND/tháng)</Label>
+            <Input name="fixedMonthlySalary" type="number" min={0} placeholder="0 = tính theo giờ; > 0 = ăn lương cố định" />
+          </div>
           <Button type="submit" disabled={pending}>
             {pending ? "Đang mời…" : "Gửi lời mời"}
           </Button>

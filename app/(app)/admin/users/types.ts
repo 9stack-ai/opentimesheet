@@ -10,4 +10,5 @@ export type UserRow = {
   defaultBillableRate: number;
   taxWithholdingRateBps: number;
   employerCostRateBps: number;
+  fixedMonthlySalary: number;
 };

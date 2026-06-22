@@ -28,6 +28,7 @@ model User {
   // Tax model (basis points; 10% = 1000). Withholding is deducted from gross pay; employer cost is added on top.
   taxWithholdingRateBps Int        @default(0) // PIT withheld from collaborator pay (e.g. 1000 = 10%)
   employerCostRateBps   Int        @default(0) // employer-side insurance, extra company cost (e.g. 2150 = 21.5%)
+  fixedMonthlySalary  Int          @default(0) // VND/month gross; > 0 → fixed-salary person (timesheet ignored for pay)
   // Redmine integration (single shared instance; API key encrypted at rest)
   redmineApiKeyEnc    String?
   redmineUserId       Int?
