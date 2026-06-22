@@ -41,6 +41,7 @@ export function WorkSessionCard({
   // Hooks must run unconditionally — tick only while a session is active.
   const [nowMs, setNowMs] = React.useState(0);
   const [open, setOpen] = React.useState(false);
+  const [cancelOpen, setCancelOpen] = React.useState(false);
   React.useEffect(() => {
     if (!activeSince) return;
     const tick = () => setNowMs(Date.now());
@@ -78,14 +79,31 @@ export function WorkSessionCard({
   const recordHours = (Math.min(elapsed, MAX_MS) / 3_600_000).toFixed(2);
 
   return (
-    <Card className={over ? "border-amber-400" : undefined}>
+    <Card
+      className={
+        over ? "border-amber-400 bg-amber-50/70" : "border-emerald-500/60 bg-emerald-50/70 dark:bg-emerald-950/20"
+      }
+    >
       <CardContent className="flex flex-wrap items-center gap-4 py-4">
-        <div>
-          <div className="font-medium">Đang làm việc</div>
-          <div className="font-mono text-2xl tabular-nums">{fmt(elapsed)}</div>
+        <div className="flex items-center gap-3">
+          {/* Chấm "live" nhấp nháy để CTV thấy rõ phiên đang chạy. */}
+          <span className="relative flex size-3" aria-hidden>
+            <span
+              className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 ${over ? "bg-amber-400" : "bg-emerald-400"}`}
+            />
+            <span className={`relative inline-flex size-3 rounded-full ${over ? "bg-amber-500" : "bg-emerald-500"}`} />
+          </span>
+          <div>
+            <div
+              className={`text-xs font-semibold uppercase tracking-wide ${over ? "text-amber-700" : "text-emerald-700"}`}
+            >
+              Đang làm việc
+            </div>
+            <div className="font-mono text-3xl font-bold tabular-nums">{fmt(elapsed)}</div>
+          </div>
         </div>
         {over ? (
-          <span className="rounded bg-amber-100 px-2 py-1 text-xs text-amber-800">
+          <span className="rounded bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800">
             Đã đạt tối đa 4h — chỉ ghi 4h
           </span>
         ) : null}
@@ -162,11 +180,34 @@ export function WorkSessionCard({
             </DialogContent>
           </Dialog>
 
-          <form action={cancelSession}>
-            <SubmitButton variant="ghost" size="sm" className="text-muted-foreground" pendingText="Đang huỷ…">
-              <X className="size-4" /> Huỷ
-            </SubmitButton>
-          </form>
+          <Dialog open={cancelOpen} onOpenChange={setCancelOpen}>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="sm" className="text-muted-foreground">
+                <X className="size-4" /> Huỷ
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Huỷ phiên đang chạy?</DialogTitle>
+              </DialogHeader>
+              <p className="text-sm text-muted-foreground">
+                Thời gian đã đếm (<span className="font-mono font-medium">{fmt(elapsed)}</span>) sẽ không được ghi
+                lại. Bạn chắc chắn muốn huỷ?
+              </p>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button type="button" variant="outline">
+                    Không
+                  </Button>
+                </DialogClose>
+                <form action={cancelSession} onSubmit={() => setCancelOpen(false)}>
+                  <SubmitButton variant="destructive" pendingText="Đang huỷ…">
+                    Huỷ phiên
+                  </SubmitButton>
+                </form>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </CardContent>
     </Card>
