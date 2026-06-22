@@ -42,13 +42,13 @@ export async function financeOverview(period: Period): Promise<FinanceOverview> 
       where: { date: { gte: period.start, lt: period.end } },
       _sum: { amount: true },
     }),
-    payrollByUser(period), // hourly timesheet + fixed-salary, merged per user
+    payrollByUser(period), // approved timesheet payout per user (rate snapshotted at approval)
   ]);
 
   const income = incomes.reduce((s, i) => s + i.amount, 0);
   const paidByUser = new Map(disb.map((g) => [g.userId, g._sum.amount ?? 0]));
   const disbursed = disb.reduce((s, g) => s + (g._sum.amount ?? 0), 0);
-  // Lương phải trả gộp = giờ công đã duyệt + lương cố định (gộp qua payrollByUser).
+  // Lương phải trả gộp = giờ công đã duyệt (timesheet), không gồm lương cố định.
   const accruedPayout = [...pay.values()].reduce((s, p) => s + p.gross, 0);
   // Đang chờ chi = NET còn nợ theo từng người, clamped ≥ 0 — khoản trả cho người không có lương
   // (hoặc trả dư) không triệt tiêu phần nợ của người khác.

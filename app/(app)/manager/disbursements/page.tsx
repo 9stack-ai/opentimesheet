@@ -70,7 +70,7 @@ export default async function DisbursementsPage({
       {/* 1) Đối soát cho người CÓ chấm công: phải trả (net) vs đã trả */}
       <div>
         <h2 className="mb-2 text-sm font-medium text-muted-foreground">
-          Đối soát lương (giờ công + lương cố định)
+          Đối soát chấm công (người có timesheet)
         </h2>
         <div className="overflow-x-auto rounded-md border">
           <table className="w-full text-sm">
